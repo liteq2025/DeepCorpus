@@ -257,66 +257,70 @@ function ComponentsTable({ group }: { group: RegistryGroup }) {
   );
 }
 
-// ─── Layout: cards (Stack / Frontend / Fork) ──────────────────────────────
+// ─── Layout: categories (Stack / Frontend / Fork) — generic table ─────────
 
-function CardsLayout({ group }: { group: RegistryGroup }) {
+/**
+ * Pull a flat list of "items" out of a module — preferring `tags`, falling
+ * back to `submodules` then `features`. Used as the "内容" cell so each
+ * row shows ALL members of the category, no matter which field they live in.
+ */
+function moduleItems(mod: ModuleEntry): string[] {
+  if (mod.tags && mod.tags.length > 0) return mod.tags;
+  if (mod.submodules && mod.submodules.length > 0)
+    return mod.submodules.map((s) => s.label);
+  if (mod.features && mod.features.length > 0)
+    return mod.features.map((f) => f.label);
+  return [];
+}
+
+function CategoriesTable({ group }: { group: RegistryGroup }) {
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      {group.modules.map((mod) => (
-        <div
-          key={mod.id}
-          className="flex flex-col gap-3 rounded-lg border border-[var(--border)] bg-[var(--card)] p-4"
-        >
-          <div className="flex items-start justify-between gap-2">
-            <h3 className="text-[14px] font-semibold text-[var(--foreground)]">
-              {mod.label}
-            </h3>
-            <StatusPill status={mod.status} />
-          </div>
-          {mod.description && (
-            <p className="text-[12.5px] leading-relaxed text-[var(--muted-foreground)]">
-              {mod.description}
-            </p>
-          )}
-          {mod.tags && mod.tags.length > 0 && <TagChips tags={mod.tags} />}
-          {mod.submodules && mod.submodules.length > 0 && (
-            <ul className="space-y-1 border-t border-[var(--border)]/60 pt-3 text-[12px]">
-              {mod.submodules.map((sub) => (
-                <li key={sub.id} className="flex gap-2">
-                  <span className="shrink-0 text-[var(--muted-foreground)]">·</span>
-                  <span className="text-[var(--foreground)]">
-                    <span className="font-medium">{sub.label}</span>
-                    {sub.description && (
-                      <span className="text-[var(--muted-foreground)]">
-                        {" — "}
-                        {sub.description}
-                      </span>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          {mod.features && mod.features.length > 0 && (
-            <ul className="space-y-1 border-t border-[var(--border)]/60 pt-3 text-[12px]">
-              {mod.features.map((f) => (
-                <li key={f.id} className="flex gap-2">
-                  <span className="shrink-0 text-[var(--muted-foreground)]">·</span>
-                  <span className="text-[var(--foreground)]">
-                    <span className="font-medium">{f.label}</span>
-                    {f.description && (
-                      <span className="text-[var(--muted-foreground)]">
-                        {" — "}
-                        {f.description}
-                      </span>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      ))}
+    <div className="overflow-hidden rounded-lg border border-[var(--border)]">
+      <table className="w-full text-[13px]">
+        <thead className="bg-[var(--secondary)]/40 text-left text-[11px] uppercase tracking-wider text-[var(--muted-foreground)]">
+          <tr>
+            <th className="w-[26%] px-4 py-2.5 font-medium">类目</th>
+            <th className="w-[8%] px-4 py-2.5 font-medium">数量</th>
+            <th className="px-4 py-2.5 font-medium">内容</th>
+            <th className="w-[8%] px-4 py-2.5 font-medium">状态</th>
+          </tr>
+        </thead>
+        <tbody>
+          {group.modules.map((mod) => {
+            const items = moduleItems(mod);
+            return (
+              <tr
+                key={mod.id}
+                className="border-t border-[var(--border)] align-top hover:bg-[var(--secondary)]/20"
+              >
+                <td className="px-4 py-3">
+                  <div className="font-medium text-[var(--foreground)]">
+                    {mod.label}
+                  </div>
+                  {mod.description && (
+                    <div className="mt-1 text-[12px] leading-relaxed text-[var(--muted-foreground)]">
+                      {mod.description}
+                    </div>
+                  )}
+                </td>
+                <td className="px-4 py-3 font-mono text-[var(--foreground)]">
+                  {items.length || "—"}
+                </td>
+                <td className="px-4 py-3">
+                  {items.length > 0 ? (
+                    <TagChips tags={items} />
+                  ) : (
+                    <span className="text-[var(--muted-foreground)]">—</span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  <StatusPill status={mod.status} />
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -341,8 +345,8 @@ function GroupView({ group }: { group: RegistryGroup }) {
 
       {layout === "stats" && <StatsLayout group={group} />}
       {layout === "modules" && <ModulesLayout group={group} />}
-      {layout === "table" && <ComponentsTable group={group} />}
-      {layout === "cards" && <CardsLayout group={group} />}
+      {layout === "components" && <ComponentsTable group={group} />}
+      {layout === "categories" && <CategoriesTable group={group} />}
     </div>
   );
 }

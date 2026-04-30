@@ -37,7 +37,7 @@ export interface ModuleEntry {
   references?: { label: string; href?: string }[];
 }
 
-export type GroupLayout = "stats" | "modules" | "table" | "cards";
+export type GroupLayout = "stats" | "modules" | "components" | "categories";
 
 export interface RegistryGroup {
   id: string;
@@ -234,7 +234,7 @@ export const DEV_REGISTRY: RegistryGroup[] = [
     id: "components",
     label: "Components · 前端组件库",
     description: "12 类组件目录、64 个 .tsx 文件 + 3 个顶层组件。设计为 feature-folder 结构（一类功能一个目录）。",
-    layout: "table",
+    layout: "components",
     modules: [
       {
         id: "co-knowledge",
@@ -363,7 +363,7 @@ export const DEV_REGISTRY: RegistryGroup[] = [
     id: "stack",
     label: "Stack · 技术栈",
     description: "全栈现代生态；前端最新主版本；本地优先无需外部数据库。",
-    layout: "table",
+    layout: "categories",
     modules: [
       {
         id: "sk-frontend",
@@ -476,7 +476,7 @@ export const DEV_REGISTRY: RegistryGroup[] = [
     id: "frontend-status",
     label: "Frontend · 前端框架情况",
     description: "用最新主版本；标准 App Router 结构；状态管理保守（Context + localStorage）。",
-    layout: "cards",
+    layout: "categories",
     modules: [
       {
         id: "fs-version",
@@ -545,7 +545,7 @@ export const DEV_REGISTRY: RegistryGroup[] = [
     id: "fork-meta",
     label: "Fork · Path B 软 fork",
     description: "本仓库是 HKUDS/DeepTutor 的 fork，用 Path B 策略（被动观察 + 选择性 cherry-pick）。",
-    layout: "cards",
+    layout: "categories",
     modules: [
       {
         id: "fm-arch",
