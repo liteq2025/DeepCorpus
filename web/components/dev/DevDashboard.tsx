@@ -40,6 +40,22 @@ function PathChip({ path }: { path?: string }) {
   );
 }
 
+function TagChips({ tags }: { tags?: string[] }) {
+  if (!tags || tags.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {tags.map((tag) => (
+        <span
+          key={tag}
+          className="inline-flex items-center rounded-full border border-[var(--border)] bg-[var(--card)] px-2 py-0.5 text-[11px] text-[var(--foreground)]"
+        >
+          {tag}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 interface TreeNodeProps {
   module: ModuleEntry;
   group: RegistryGroup;
@@ -260,6 +276,11 @@ function ModuleDetail({
         <p className="mt-3 text-sm leading-relaxed text-[var(--muted-foreground)]">
           {mod.description}
         </p>
+        {mod.tags && mod.tags.length > 0 && (
+          <div className="mt-3">
+            <TagChips tags={mod.tags} />
+          </div>
+        )}
       </header>
 
       <div className="border-b border-[var(--border)]">
@@ -310,9 +331,16 @@ function ModuleDetail({
                       <StatusPill status={sub.status} />
                     </div>
                     {sub.path && <div className="mt-1.5"><PathChip path={sub.path} /></div>}
-                    <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--muted-foreground)]">
-                      {sub.description}
-                    </p>
+                    {sub.description && (
+                      <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--muted-foreground)]">
+                        {sub.description}
+                      </p>
+                    )}
+                    {sub.tags && sub.tags.length > 0 && (
+                      <div className="mt-2">
+                        <TagChips tags={sub.tags} />
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -322,7 +350,7 @@ function ModuleDetail({
           {mod.features && mod.features.length > 0 && (
             <section>
               <h2 className="mb-2 text-sm font-semibold text-[var(--foreground)]">
-                Features
+                Features ({mod.features.length})
               </h2>
               <ul className="space-y-2">
                 {mod.features.map((f) => (
@@ -336,9 +364,16 @@ function ModuleDetail({
                       </span>
                       <StatusPill status={f.status} />
                     </div>
-                    <p className="mt-1 text-[12px] leading-relaxed text-[var(--muted-foreground)]">
-                      {f.description}
-                    </p>
+                    {f.description && (
+                      <p className="mt-1 text-[12px] leading-relaxed text-[var(--muted-foreground)]">
+                        {f.description}
+                      </p>
+                    )}
+                    {f.tags && f.tags.length > 0 && (
+                      <div className="mt-2">
+                        <TagChips tags={f.tags} />
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>

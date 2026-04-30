@@ -1,13 +1,16 @@
 /**
- * Module registry for the /dev developer dashboard.
+ * Dev console registry — product-director view.
  *
- * This is a hand-curated map of the project's modules and submodules. It
- * starts as static data; later it can be augmented by introspection
- * (reading capability_registry / tool_registry from the backend, walking
- * the file tree, etc.).
+ * Built for "what does this product ship and what's it built on", not
+ * "where does this Python class live". Hand-curated; numbers come from
+ * actual file counts (see web/scripts/dev-registry-stats.md if added).
  *
- * Convention: every item has a stable `id` (kebab-case). Paths are
- * repo-relative (no leading slash).
+ * Conventions:
+ *  - Group = a top-level lens (Overview / Features / Components / Stack / Fork)
+ *  - Module = a panel within a lens
+ *  - Submodule = a specific item with its own description
+ *  - features[] = micro-bullets shown as a list (good for "what's inside")
+ *  - tags[] = chip-rendered tech / vendor names (good for stack matrices)
  */
 
 export type ModuleStatus = "shipped" | "wip" | "planned";
@@ -15,7 +18,7 @@ export type ModuleStatus = "shipped" | "wip" | "planned";
 export interface FeatureEntry {
   id: string;
   label: string;
-  description: string;
+  description?: string;
   status?: ModuleStatus;
   tags?: string[];
 }
@@ -29,7 +32,6 @@ export interface ModuleEntry {
   submodules?: ModuleEntry[];
   features?: FeatureEntry[];
   tags?: string[];
-  /** External reference (file:line, doc URL, etc.) */
   references?: { label: string; href?: string }[];
 }
 
@@ -41,415 +43,521 @@ export interface RegistryGroup {
 }
 
 export const DEV_REGISTRY: RegistryGroup[] = [
-  // ===========================================================
-  // BACKEND
-  // ===========================================================
+  // =====================================================================
+  // 1. OVERVIEW — 产品全貌
+  // =====================================================================
   {
-    id: "backend",
-    label: "Backend (Python)",
-    description: "FastAPI server, capability-driven orchestration, agents, tools.",
+    id: "overview",
+    label: "Overview · 产品全貌",
+    description:
+      "DeepCorpus 是基于 HKUDS/DeepTutor 的重度二开 fork。Capability-driven agent 工作台 — 对话即入口，9 大功能模块，6 种 AI 模式，7 类智能工具，20+ LLM provider 兼容，本地优先（SQLite + 进程内向量）。",
     modules: [
       {
-        id: "runtime",
-        label: "runtime — Orchestration core",
-        path: "deeptutor/runtime/",
+        id: "ov-pitch",
+        label: "一句话定位",
         description:
-          "Routes user turns to capabilities; owns the global ToolRegistry and CapabilityRegistry. Validates manifests at startup.",
-        status: "shipped",
+          "面向研究 / 学习 / 知识工作场景的 agent-native 工作台；同时是个能装进自己 stack 的 agent 平台底座。",
         features: [
-          {
-            id: "chat-orchestrator",
-            label: "ChatOrchestrator",
-            description:
-              "Central router. Accepts UnifiedContext, dispatches to selected capability, manages StreamBus lifecycle, publishes completion events.",
-          },
-          {
-            id: "tool-registry",
-            label: "ToolRegistry",
-            description:
-              "Loads built-in tools at boot; supports tool aliases; exposes get(), list_tools(), get_definitions().",
-          },
-          {
-            id: "capability-registry",
-            label: "CapabilityRegistry",
-            description:
-              "Loads 6 built-in capabilities + plugin capabilities. Validates each manifest's tools_used against ToolRegistry.",
-          },
-          {
-            id: "run-mode",
-            label: "RunMode",
-            description: "CLI / SERVER mode predicate used to gate features that depend on stdin or background workers.",
-          },
-        ],
-        references: [{ label: "deeptutor/runtime/orchestrator.py:26" }],
-      },
-      {
-        id: "capabilities",
-        label: "capabilities — Multi-step pipelines (Level 2)",
-        path: "deeptutor/capabilities/",
-        description:
-          "Each capability is a multi-stage pipeline (planning → reasoning → writing). Manifest declares stages and required tools.",
-        status: "shipped",
-        submodules: [
-          {
-            id: "cap-chat",
-            label: "chat",
-            path: "deeptutor/capabilities/chat.py",
-            description: "Default tool-augmented conversational mode.",
-          },
-          {
-            id: "cap-deep-solve",
-            label: "deep_solve",
-            path: "deeptutor/capabilities/deep_solve.py",
-            description: "Plan → reason → write for hard problem solving.",
-          },
-          {
-            id: "cap-deep-question",
-            label: "deep_question",
-            path: "deeptutor/capabilities/deep_question.py",
-            description: "Ideation → evaluation → generation → validation; produces questions from documents.",
-          },
-          {
-            id: "cap-deep-research",
-            label: "deep_research",
-            path: "deeptutor/capabilities/deep_research.py",
-            description: "Decomposes a research goal into exploratory sub-questions.",
-          },
-          {
-            id: "cap-math-animator",
-            label: "math_animator",
-            path: "deeptutor/capabilities/math_animator.py",
-            description: "Step-by-step math visualization (Manim).",
-          },
-          {
-            id: "cap-visualize",
-            label: "visualize",
-            path: "deeptutor/capabilities/visualize.py",
-            description: "Diagrams / charts from analysis output.",
-          },
+          { id: "p1", label: "对话 + 工具调用 + 多模态附件" },
+          { id: "p2", label: "RAG 知识库 + 个性化记忆" },
+          { id: "p3", label: "Capability 多步骤管线（plan→reason→write 等）— 不是裸 LLM" },
+          { id: "p4", label: "TutorBot 跨渠道（Slack / Discord / 邮件）后台 agent 引擎" },
+          { id: "p5", label: "Co-Writer 协同写作 + Book 互动书引擎" },
+          { id: "p6", label: "插件 / 自定义 Skill / 可热切换 Provider catalog" },
         ],
       },
       {
-        id: "tools",
-        label: "tools — LLM-callable functions (Level 1)",
-        path: "deeptutor/tools/",
-        description: "Single-purpose tools the LLM invokes via function calling.",
-        status: "shipped",
-        submodules: [
-          { id: "tool-rag", label: "rag", description: "Knowledge base retrieval (LlamaIndex)." },
-          { id: "tool-web-search", label: "web_search", description: "Web search abstraction (Brave/Tavily/Serper/DuckDuckGo)." },
-          { id: "tool-code-execution", label: "code_execution", description: "Sandboxed Python execution with import guard." },
-          { id: "tool-reason", label: "reason", description: "Dedicated deep-reasoning LLM call." },
-          { id: "tool-brainstorm", label: "brainstorm", description: "Breadth-first ideation with rationale." },
-          { id: "tool-paper-search", label: "paper_search", description: "arXiv academic paper search." },
-          { id: "tool-geogebra-analysis", label: "geogebra_analysis", description: "4-stage vision pipeline: image → GeoGebra commands." },
+        id: "ov-numbers",
+        label: "关键数字（可量化规模）",
+        description: "扫一眼项目体量，无需读代码。",
+        features: [
+          { id: "n1", label: "AI 模式（Capability）", description: "6 个 — chat, deep_solve, deep_question, deep_research, math_animator, visualize" },
+          { id: "n2", label: "智能工具（Tool）", description: "7 类 — RAG / 网页搜索 / 代码沙箱 / 推理 / 头脑风暴 / 论文检索 / 几何分析" },
+          { id: "n3", label: "产品功能模块", description: "9 个大模块 + 30+ 子功能" },
+          { id: "n4", label: "LLM Provider 兼容", description: "20+（OpenAI / Anthropic / DeepSeek / Gemini / Qwen / GLM / Kimi / 豆包 / Ollama / LM Studio …）" },
+          { id: "n5", label: "Embedding Provider", description: "9 家（OpenAI / Cohere / Jina / Ollama / vLLM / Azure / Aliyun / SiliconFlow / Custom）" },
+          { id: "n6", label: "搜索 Provider", description: "7 家（Brave / Tavily / Jina / SearXNG / DuckDuckGo / Perplexity / Serper）" },
+          { id: "n7", label: "前端路由", description: "15 个用户路由（5 workspace + 10 utility）" },
+          { id: "n8", label: "REST API 端点", description: "154 个，分布在 22 个 router 模块" },
+          { id: "n9", label: "前端组件", description: "64 个 .tsx 组件，分 12 类目录" },
+          { id: "n10", label: "WebSocket 入口", description: "1 个 unified（多路复用 chat / sessions / turns）" },
+          { id: "n11", label: "支持文档格式", description: "PDF / DOCX / XLSX / PPTX / MD / TXT" },
+          { id: "n12", label: "主题 / 语言", description: "3 主题（light / dark / glass）+ 中英双语" },
         ],
-      },
-      {
-        id: "agents",
-        label: "agents — Specialized agent classes",
-        path: "deeptutor/agents/",
-        description: "Concrete agent implementations consumed by capabilities.",
-        status: "shipped",
-        submodules: [
-          { id: "agent-chat", label: "chat", description: "ChatAgent + SessionManager + AgenticPipeline." },
-          { id: "agent-solve", label: "solve", description: "MainSolver: plan → reason → write." },
-          { id: "agent-research", label: "research", description: "Research decomposition agent." },
-          { id: "agent-question", label: "question", description: "Question generation pipelines." },
-          { id: "agent-math-animator", label: "math_animator", description: "Manim animation pipeline." },
-          { id: "agent-visualize", label: "visualize", description: "Diagram generation pipeline." },
-          { id: "agent-vision-solver", label: "vision_solver", description: "Image-based math: BBox → Analysis → Plan → Render." },
-          { id: "agent-notebook", label: "notebook", description: "Notebook analysis / summarization." },
-        ],
-      },
-      {
-        id: "api",
-        label: "api — FastAPI server + 22 routers",
-        path: "deeptutor/api/",
-        description: "REST + WebSocket endpoints. Registry consistency check at startup.",
-        status: "shipped",
-        submodules: [
-          { id: "router-solve", label: "/api/v1 solve", path: "deeptutor/api/routers/solve.py", description: "Solve requests + draft management." },
-          { id: "router-chat", label: "/api/v1 chat", path: "deeptutor/api/routers/chat.py", description: "Chat session deletion." },
-          { id: "router-question", label: "/api/v1/question", path: "deeptutor/api/routers/question.py", description: "Question generation." },
-          { id: "router-knowledge", label: "/api/v1/knowledge", path: "deeptutor/api/routers/knowledge.py", description: "KB CRUD + ingestion." },
-          { id: "router-dashboard", label: "/api/v1/dashboard", path: "deeptutor/api/routers/dashboard.py", description: "System metrics." },
-          { id: "router-cowriter", label: "/api/v1/co_writer", path: "deeptutor/api/routers/co_writer.py", description: "Collaborative editing." },
-          { id: "router-notebook", label: "/api/v1/notebook", path: "deeptutor/api/routers/notebook.py", description: "Notebook lifecycle." },
-          { id: "router-book", label: "/api/v1/book", path: "deeptutor/api/routers/book.py", description: "Book engine + WS." },
-          { id: "router-memory", label: "/api/v1/memory", path: "deeptutor/api/routers/memory.py", description: "Session memory + recall." },
-          { id: "router-sessions", label: "/api/v1/sessions", path: "deeptutor/api/routers/sessions.py", description: "Session CRUD." },
-          { id: "router-q-notebook", label: "/api/v1/question-notebook", path: "deeptutor/api/routers/question_notebook.py", description: "Question notebook blocks." },
-          { id: "router-settings", label: "/api/v1/settings", path: "deeptutor/api/routers/settings.py", description: "Catalog + apply + theme + tour." },
-          { id: "router-skills", label: "/api/v1/skills", path: "deeptutor/api/routers/skills.py", description: "Skill loading + CRUD." },
-          { id: "router-system", label: "/api/v1/system", path: "deeptutor/api/routers/system.py", description: "System init + config." },
-          { id: "router-plugins", label: "/api/v1/plugins", path: "deeptutor/api/routers/plugins_api.py", description: "Plugin install/registration." },
-          { id: "router-agent-config", label: "/api/v1/agent-config", path: "deeptutor/api/routers/agent_config.py", description: "Agent manifests + schemas." },
-          { id: "router-vision-solver", label: "/api/v1 vision-solver", path: "deeptutor/api/routers/vision_solver.py", description: "Vision-based math solving." },
-          { id: "router-tutorbot", label: "/api/v1/tutorbot", path: "deeptutor/api/routers/tutorbot.py", description: "TutorBot channels." },
-          { id: "router-attachments", label: "/api/attachments", path: "deeptutor/api/routers/attachments.py", description: "File uploads." },
-          { id: "router-ws", label: "/api/v1/ws (unified)", path: "deeptutor/api/routers/unified_ws.py", description: "Single WebSocket multiplexer for chat + sessions + turns." },
-        ],
-      },
-      {
-        id: "services",
-        label: "services — Shared service layer",
-        path: "deeptutor/services/",
-        description: "LLM, embedding, RAG, prompt, search, session, memory, storage, providers.",
-        status: "shipped",
-        submodules: [
-          { id: "svc-llm", label: "llm", description: "LLM client abstraction (OpenAI / Claude / local)." },
-          { id: "svc-embedding", label: "embedding", description: "Embedding provider abstraction." },
-          { id: "svc-rag", label: "rag", description: "LlamaIndex-backed RAG pipelines." },
-          { id: "svc-prompt", label: "prompt", description: "PromptManager loading from YAML." },
-          { id: "svc-search", label: "search", description: "Web search providers." },
-          { id: "svc-session", label: "session", description: "Session state persistence (SQLite)." },
-          { id: "svc-memory", label: "memory", description: "Conversation memory + recall." },
-          { id: "svc-storage", label: "storage", description: "Document + attachment storage." },
-          { id: "svc-config", label: "config", description: "EnvStore, ModelCatalogService, provider runtime." },
-          { id: "svc-skill", label: "skill", description: "Skill definition + loading." },
-          { id: "svc-setup", label: "setup", description: "First-run init (dirs + defaults)." },
-        ],
-      },
-      {
-        id: "knowledge",
-        label: "knowledge — Knowledge base lifecycle",
-        path: "deeptutor/knowledge/",
-        description: "Document ingestion, indexing, progress tracking.",
-        status: "shipped",
-      },
-      {
-        id: "book",
-        label: "book — Living book engine",
-        path: "deeptutor/book/",
-        description: "Compiles chat / notebooks / KBs / intent into structured curricula. Block-based.",
-        status: "shipped",
-      },
-      {
-        id: "co-writer",
-        label: "co_writer — Collaborative editor",
-        path: "deeptutor/co_writer/",
-        description: "Iterative document refinement agent.",
-        status: "shipped",
-      },
-      {
-        id: "tutorbot",
-        label: "tutorbot — Multi-channel agent engine",
-        path: "deeptutor/tutorbot/",
-        description: "Background / scheduled tutoring; Slack / Discord / email adapters.",
-        status: "shipped",
-      },
-      {
-        id: "core",
-        label: "core — Protocol contracts",
-        path: "deeptutor/core/",
-        description: "BaseTool / BaseCapability / UnifiedContext / StreamBus / errors.",
-        status: "shipped",
-      },
-      {
-        id: "events",
-        label: "events — Event bus",
-        path: "deeptutor/events/",
-        description: "Pub-sub event bus for capability completion, LLM calls, errors.",
-        status: "shipped",
-      },
-      {
-        id: "config",
-        label: "config — Settings schema",
-        path: "deeptutor/config/",
-        description: "Pydantic Settings + defaults + accessors.",
-        status: "shipped",
-      },
-      {
-        id: "logging",
-        label: "logging — Unified logging",
-        path: "deeptutor/logging/",
-        description: "File / console / WebSocket handlers + LLM token accounting + pricing.",
-        status: "shipped",
-      },
-      {
-        id: "app",
-        label: "app — Facade for CLI / Web / SDK",
-        path: "deeptutor/app/",
-        description: "DeepTutorApp wraps orchestrator for external consumers.",
-        status: "shipped",
-      },
-      {
-        id: "utils",
-        label: "utils — Helpers",
-        path: "deeptutor/utils/",
-        description: "Document extractor (PDF / DOCX / XLSX / PPTX), JSON parsing, error tracking, network utils.",
-        status: "shipped",
       },
     ],
   },
 
-  // ===========================================================
-  // FRONTEND
-  // ===========================================================
+  // =====================================================================
+  // 2. FEATURES — 产品功能模块清单
+  // =====================================================================
   {
-    id: "frontend",
-    label: "Frontend (Next.js)",
-    description: "Next.js 16 App Router + React 19 + Tailwind + react-i18next.",
+    id: "features",
+    label: "Features · 功能模块",
+    description: "9 大功能模块、30+ 子功能。这是用户真正用到的产品面。",
     modules: [
       {
-        id: "fe-routes-workspace",
-        label: "Routes — workspace group",
-        path: "web/app/(workspace)/",
-        description: "Productive features sharing the WorkspaceSidebar layout.",
+        id: "ft-chat",
+        label: "💬 Chat 智能对话",
+        description: "默认入口；6 种 AI 模式 + 7 类工具按需调用；多会话；流式响应。",
         status: "shipped",
         submodules: [
-          { id: "rt-chat", label: "/chat[/sessionId]", description: "Main chat interface." },
-          { id: "rt-agents", label: "/agents[/botId/chat]", description: "TutorBot list + per-bot chat." },
-          { id: "rt-co-writer", label: "/co-writer[/docId]", description: "Co-Writer document editor." },
-          { id: "rt-book", label: "/book", description: "Book reader + progress." },
-          { id: "rt-playground", label: "/playground", description: "Model playground for testing configs." },
+          { id: "ch-sessions", label: "多会话管理", description: "无限会话历史；支持重命名 / 删除 / 切换；持久化到 SQLite" },
+          { id: "ch-skills", label: "Skill / Capability 切换", description: "对话中实时切换 chat / deep_solve / deep_question 等模式" },
+          { id: "ch-attachments", label: "多模态附件", description: "PDF / DOCX / 图片 / 代码 上传；Drawer 预览" },
+          { id: "ch-stream", label: "实时流式", description: "WebSocket 推送 stage 进度 + token 流；可中断" },
+          { id: "ch-mention", label: "@ 引用", description: "@ 笔记本 / 知识库 / 历史记录 注入上下文" },
+          { id: "ch-trace", label: "Trace 面板", description: "查看每个 stage 的执行细节（thinking / acting / observing）" },
         ],
       },
       {
-        id: "fe-routes-utility",
-        label: "Routes — utility group",
-        path: "web/app/(utility)/",
-        description: "Settings / management / dev — share UtilitySidebar layout.",
+        id: "ft-modes",
+        label: "🧠 AI 模式（6 个 Capability）",
+        description: "每个模式是 multi-stage agent 管线，**不是裸 LLM**。",
         status: "shipped",
         submodules: [
-          { id: "rt-knowledge", label: "/knowledge", description: "KB management + upload." },
-          { id: "rt-settings", label: "/settings", description: "Theme / language / providers / catalog." },
-          { id: "rt-notebook", label: "/notebook", description: "Notebook UI." },
-          { id: "rt-memory", label: "/memory", description: "Memory management." },
-          { id: "rt-space", label: "/space[/memory|notebooks|questions|skills]", description: "Workspace overview + sub-pages." },
-          { id: "rt-dev", label: "/dev", description: "Developer dashboard (this page).", status: "wip" },
+          { id: "mo-chat", label: "Chat（普通对话）", description: "默认；工具增强的对话；LLM 自主决定何时用什么工具" },
+          { id: "mo-solve", label: "Deep Solve（深度求解）", description: "Plan → Reason → Write 三阶段；用于难题拆解" },
+          { id: "mo-question", label: "Deep Question（深度提问）", description: "Ideate → Evaluate → Generate → Validate；从文档抽题" },
+          { id: "mo-research", label: "Deep Research（深度研究）", description: "把研究目标拆成探索性子问题；并行检索 + 综合" },
+          { id: "mo-math", label: "Math Animator（数学动画）", description: "Manim 渲染分步解题动画；输出视频" },
+          { id: "mo-viz", label: "Visualize（可视化）", description: "从分析输出生成图表 / 流程图 / Mermaid" },
         ],
       },
       {
-        id: "fe-state",
-        label: "State management",
-        description: "React Context + localStorage. No Redux/Zustand.",
+        id: "ft-tools",
+        label: "🛠️ 智能工具（7 类 Tool）",
+        description: "LLM 在对话中按需自主调用，单职责函数。",
         status: "shipped",
         submodules: [
-          { id: "ctx-app-shell", label: "AppShellContext", path: "web/context/AppShellContext.tsx", description: "Theme, language, activeSessionId, sidebarCollapsed." },
-          { id: "ctx-unified-chat", label: "UnifiedChatContext", path: "web/context/UnifiedChatContext.tsx", description: "Session runtime, messages, streaming events." },
-          { id: "ctx-storage", label: "app-shell-storage", path: "web/context/app-shell-storage.ts", description: "localStorage bridge with custom window events." },
+          { id: "tl-rag", label: "RAG", description: "知识库语义检索；LlamaIndex 实现；返回片段 + 综合答案" },
+          { id: "tl-web", label: "Web Search", description: "Brave / Tavily / DuckDuckGo / Jina / SearXNG / Perplexity / Serper 7 家可切" },
+          { id: "tl-code", label: "Code Execution", description: "Python 沙箱执行；导入守卫；工作区追踪" },
+          { id: "tl-reason", label: "Reason", description: "独立的深度推理 LLM 调用（可用 reasoning 模型）" },
+          { id: "tl-brainstorm", label: "Brainstorm", description: "广度优先创意生成 + 推理理由" },
+          { id: "tl-paper", label: "Paper Search", description: "arXiv 学术检索 + LaTeX 源下载" },
+          { id: "tl-geogebra", label: "GeoGebra Analysis", description: "图像 → GeoGebra 命令的 4 阶段视觉管线" },
         ],
       },
       {
-        id: "fe-clients",
-        label: "API + WebSocket clients",
-        path: "web/lib/",
-        description: "Per-feature HTTP clients + one unified WS client.",
+        id: "ft-knowledge",
+        label: "📚 知识库（KB）",
+        description: "上传文档 → 自动切块 → 嵌入索引 → 对话引用，全流程进程内完成。",
         status: "shipped",
         submodules: [
-          { id: "cl-api", label: "api.ts", description: "URL builders (apiUrl/wsUrl/resolveBase)." },
-          { id: "cl-unified-ws", label: "unified-ws.ts", description: "UnifiedWSClient: heartbeat + auto-reconnect + resume_from." },
-          { id: "cl-session", label: "session-api.ts", description: "Sessions + quiz results." },
-          { id: "cl-knowledge", label: "knowledge-api.ts", description: "KB CRUD + RAG providers." },
-          { id: "cl-book", label: "book-api.ts", description: "Book HTTP + dedicated WS." },
-          { id: "cl-cowriter", label: "co-writer-api.ts", description: "Doc CRUD." },
-          { id: "cl-notebook", label: "notebook-api.ts", description: "Notebook list + detail." },
-          { id: "cl-skills", label: "skills-api.ts", description: "Skill catalog." },
-          { id: "cl-cache", label: "client-cache.ts", description: "withClientCache(): in-memory TTL cache." },
+          { id: "kb-upload", label: "拖拽上传", description: "多文件并发；进度可见" },
+          { id: "kb-formats", label: "多格式支持", description: "PDF / DOCX / XLSX / PPTX / MD / TXT" },
+          { id: "kb-progress", label: "实时索引进度", description: "WebSocket 推送切块 / 嵌入 / 索引各阶段进度" },
+          { id: "kb-mention", label: "对话中 @ 引用", description: "在 chat 输入框 @KB 名注入" },
+          { id: "kb-multi", label: "多知识库管理", description: "命名 / 切换 / 删除 / RAG provider 切换" },
         ],
       },
       {
-        id: "fe-components",
-        label: "Components",
-        path: "web/components/",
-        description: "Per-feature directories + shared primitives.",
+        id: "ft-cowriter",
+        label: "✍️ Co-Writer 协同写作",
+        description: "AI 协作的文档编辑器；迭代式润色 / 改写 / 续写。",
         status: "shipped",
         submodules: [
-          { id: "co-chat", label: "chat/", description: "ChatComposer, ChatMessages, ComposerInput, TracePanels, file previews." },
-          { id: "co-common", label: "common/", description: "AssistantResponse, MarkdownRenderer, RichCodeBlock, Modal." },
-          { id: "co-knowledge", label: "knowledge/", description: "KnowledgePage, CreateKbModal, FileDropZone, KbDocumentList." },
-          { id: "co-notebook", label: "notebook/", description: "NotebookRecordPicker, NotebookSelector, SaveToNotebookModal." },
-          { id: "co-quiz", label: "quiz/", description: "QuizConfigPanel, QuizViewer, QuestionFollowupPanel." },
-          { id: "co-research", label: "research/", description: "ResearchConfigPanel, ResearchOutlineEditor." },
-          { id: "co-math", label: "math-animator/", description: "MathAnimatorConfigPanel, MathAnimatorViewer." },
-          { id: "co-visualize", label: "visualize/", description: "VisualizationViewer, VisualizeConfigPanel." },
-          { id: "co-sidebar", label: "sidebar/", description: "SidebarShell, WorkspaceSidebar, UtilitySidebar, recents." },
-          { id: "co-space", label: "space/", description: "MemorySection, NotebooksSection, QuestionBankSection, SkillsSection." },
-          { id: "co-dev", label: "dev/", description: "DevDashboard (this view).", status: "wip" },
-          { id: "co-ui", label: "ui/", description: "Button + future primitives." },
+          { id: "cw-doc", label: "文档列表与编辑", description: "多文档管理；版本草稿" },
+          { id: "cw-iterate", label: "迭代式编辑", description: "选段交给 EditAgent 改写" },
+          { id: "cw-context", label: "上下文感知", description: "RAG-augmented 编辑（引用 KB 内容）" },
         ],
       },
       {
-        id: "fe-design-system",
-        label: "Design system",
-        description: "Tailwind v3 + CSS variables + Radix primitives.",
+        id: "ft-book",
+        label: "📖 Book 互动书引擎",
+        description: "把对话 / 笔记本 / 知识库编译成结构化课程书；block-based。",
         status: "shipped",
         submodules: [
-          { id: "ds-tokens", label: "Design tokens", path: "web/app/globals.css", description: "CSS vars: --background, --foreground, --primary, --secondary, ... × 3 themes (default / dark / glass)." },
-          { id: "ds-tailwind", label: "tailwind.config.js", description: "Dark mode = class; tokens are CSS-var references." },
-          { id: "ds-fonts", label: "Typography", description: "Plus Jakarta Sans (sans), Lora (serif) via Google Fonts." },
-          { id: "ds-icons", label: "Icons", description: "lucide-react." },
+          { id: "bk-compile", label: "智能编译", description: "BookEngine 把零散素材组织成 章 → 页 → 块" },
+          { id: "bk-progress", label: "进度跟踪", description: "block-level 学习进度持久化" },
+          { id: "bk-stream", label: "流式生成", description: "编译过程实时可见（独立 WebSocket）" },
         ],
       },
       {
-        id: "fe-i18n",
-        label: "Internationalization",
-        path: "web/i18n/",
-        description: "react-i18next with en + zh.",
+        id: "ft-tutorbot",
+        label: "🤖 TutorBot 多渠道 agent",
+        description: "后台 / 定时任务的跨渠道 agent；像 Slack bot / 邮件助手。",
         status: "shipped",
         submodules: [
-          { id: "i18n-init", label: "init.ts", description: "initI18n + AppLanguage type." },
-          { id: "i18n-bridge", label: "I18nClientBridge.tsx", description: "Mounted in root layout to seed locale on hydration." },
-          { id: "i18n-en", label: "locales/en/app.json", description: "English strings." },
-          { id: "i18n-zh", label: "locales/zh/app.json", description: "Chinese strings." },
+          { id: "tb-slack", label: "Slack 渠道" },
+          { id: "tb-discord", label: "Discord 渠道" },
+          { id: "tb-email", label: "Email (SMTP)" },
+          { id: "tb-cron", label: "定时任务调度", description: "Cron 表达式触发 agent 任务" },
+          { id: "tb-skills", label: "Skill 系统", description: "用户自定义 markdown skill 文件描述 bot 行为" },
+          { id: "tb-heartbeat", label: "心跳健康检查" },
         ],
       },
       {
-        id: "fe-build",
-        label: "Build configuration",
-        description: "Next 16 standalone build, Tailwind, TS strict.",
+        id: "ft-workspace",
+        label: "🗂️ 工作区（Space）",
+        description: "playground / memory / notebook / skills / space 总览。",
         status: "shipped",
         submodules: [
-          { id: "bc-next", label: "next.config.js", description: "output=standalone; mermaid+cytoscape transpile config." },
-          { id: "bc-tailwind", label: "tailwind.config.js", description: "Theme extend; content paths." },
-          { id: "bc-tsconfig", label: "tsconfig.json", description: "Strict, ES2020 target, '@/' path alias." },
-          { id: "bc-scripts", label: "package.json scripts", description: "dev / dev:turbo / build / build:perf / i18n:parity / audit:ui." },
+          { id: "ws-playground", label: "Playground", description: "测试 capability 配置；isolate 调试" },
+          { id: "ws-memory", label: "记忆", description: "对话间持久记忆 + 智能 recall" },
+          { id: "ws-notebook", label: "笔记本", description: "Jupyter 风格的笔记 + 引用 + @ 接入" },
+          { id: "ws-questions", label: "题库", description: "Deep Question 生成的题目沉淀" },
+          { id: "ws-skills", label: "Skills 库", description: "用户 markdown skill 编辑 / 导入" },
+          { id: "ws-overview", label: "Space 总览", description: "工作区聚合视图（一切的入口）" },
+        ],
+      },
+      {
+        id: "ft-settings",
+        label: "⚙️ 设置",
+        description: "Provider catalog / 主题 / 语言 / 首次运行向导。",
+        status: "shipped",
+        submodules: [
+          { id: "st-catalog", label: "Provider Catalog", description: "多 profile 多 model；运行时切换无需重启" },
+          { id: "st-test", label: "Connection Test", description: "在线测试 LLM / Embedding / Search 连通性" },
+          { id: "st-theme", label: "主题（3 套）", description: "light / dark / glass" },
+          { id: "st-lang", label: "语言（2 种）", description: "中文 / English" },
+          { id: "st-tour", label: "首次运行向导", description: "scripts/start_tour.py 引导式配置" },
+          { id: "st-tests", label: "诊断工具", description: "RAG / Embedding / Search 端到端探活" },
         ],
       },
     ],
   },
 
-  // ===========================================================
-  // FORK META (Path B 软 fork 元信息)
-  // ===========================================================
+  // =====================================================================
+  // 3. COMPONENTS — 前端组件清单（含数量）
+  // =====================================================================
+  {
+    id: "components",
+    label: "Components · 前端组件库",
+    description: "12 类组件目录、64 个 .tsx 文件 + 3 个顶层组件。设计为 feature-folder 结构（一类功能一个目录）。",
+    modules: [
+      {
+        id: "co-knowledge",
+        label: "knowledge/ 知识库 UI",
+        description: "16 个组件 — 项目里组件最多的一块。",
+        path: "web/components/knowledge/",
+        tags: ["16 components"],
+        features: [
+          { id: "k1", label: "KnowledgePage（主入口）" },
+          { id: "k2", label: "CreateKbModal / FileDropZone / KbDocumentList" },
+          { id: "k3", label: "RAG provider 选择器" },
+          { id: "k4", label: "上传进度可视化" },
+        ],
+      },
+      {
+        id: "co-chat",
+        label: "chat/ 对话 UI",
+        description: "10 个组件（含 home/ + preview/ 子目录）。",
+        path: "web/components/chat/",
+        tags: ["10 components"],
+        features: [
+          { id: "c1", label: "ChatComposer / ComposerInput / SimpleComposerInput（输入区）" },
+          { id: "c2", label: "ChatMessages / TracePanels（消息渲染）" },
+          { id: "c3", label: "AtMentionPopup / HistorySessionPicker / QuestionBankPicker（@ 引用）" },
+          { id: "c4", label: "FilePreviewDrawer + 6 种 previewer（PDF / Markdown / Image / Text / Office / SVG）" },
+        ],
+      },
+      {
+        id: "co-common",
+        label: "common/ 共享原语",
+        description: "8 个 — 跨页面复用的底座组件。",
+        path: "web/components/common/",
+        tags: ["8 components"],
+        features: [
+          { id: "cm1", label: "AssistantResponse（消息容器）" },
+          { id: "cm2", label: "MarkdownRenderer / RichCodeBlock（内容渲染）" },
+          { id: "cm3", label: "Modal（模态原语）" },
+          { id: "cm4", label: "ModelThinkingCard / ProcessLogs（执行可视化）" },
+        ],
+      },
+      {
+        id: "co-sidebar",
+        label: "sidebar/ 导航",
+        description: "7 个 — workspace + utility 双侧边栏。",
+        path: "web/components/sidebar/",
+        tags: ["7 components"],
+        features: [
+          { id: "s1", label: "SidebarShell（共享外壳）" },
+          { id: "s2", label: "WorkspaceSidebar / UtilitySidebar（两种容器）" },
+          { id: "s3", label: "TutorBotRecent / BookRecent / CoWriterRecent（最近列表）" },
+          { id: "s4", label: "VersionBadge（与 GitHub release 对比）" },
+        ],
+      },
+      {
+        id: "co-space",
+        label: "space/ 工作区",
+        description: "6 个 — 工作区聚合面板。",
+        path: "web/components/space/",
+        tags: ["6 components"],
+      },
+      {
+        id: "co-quiz",
+        label: "quiz/ 测验",
+        description: "3 个 — Deep Question 生成结果展示。",
+        path: "web/components/quiz/",
+        tags: ["3 components"],
+      },
+      {
+        id: "co-notebook",
+        label: "notebook/ 笔记本",
+        description: "3 个 — 选择器 / 保存器 / 选择器 picker。",
+        path: "web/components/notebook/",
+        tags: ["3 components"],
+      },
+      {
+        id: "co-research",
+        label: "research/ 研究面板",
+        description: "2 个 — Deep Research 配置 + 大纲编辑。",
+        path: "web/components/research/",
+        tags: ["2 components"],
+      },
+      {
+        id: "co-math",
+        label: "math-animator/ 数学动画",
+        description: "2 个 — 配置面板 + Manim viewer。",
+        path: "web/components/math-animator/",
+        tags: ["2 components"],
+      },
+      {
+        id: "co-viz",
+        label: "visualize/ 可视化",
+        description: "2 个 — 配置 + 渲染。",
+        path: "web/components/visualize/",
+        tags: ["2 components"],
+      },
+      {
+        id: "co-dev",
+        label: "dev/ 开发者面板",
+        description: "1 个 — 本页面（DevDashboard）。",
+        path: "web/components/dev/",
+        tags: ["1 component", "本页面"],
+        status: "wip",
+      },
+      {
+        id: "co-ui",
+        label: "ui/ UI 原语",
+        description: "1 个 — Button。设计系统层最薄弱的一块，未来可扩。",
+        path: "web/components/ui/",
+        tags: ["1 component"],
+        status: "wip",
+      },
+      {
+        id: "co-toplevel",
+        label: "顶层组件",
+        description: "3 个 — Mermaid / SessionList / ThemeScript。",
+        path: "web/components/",
+        tags: ["3 components"],
+      },
+    ],
+  },
+
+  // =====================================================================
+  // 4. STACK — 技术栈
+  // =====================================================================
+  {
+    id: "stack",
+    label: "Stack · 技术栈",
+    description: "全栈现代生态；前端最新主版本；本地优先无需外部数据库。",
+    modules: [
+      {
+        id: "sk-frontend",
+        label: "前端 Stack",
+        description: "Next.js 16 + React 19 + Tailwind v3 + TypeScript strict。",
+        tags: [
+          "Next.js 16.2.3",
+          "React 19",
+          "TypeScript 5 strict",
+          "Tailwind 3.4",
+          "react-i18next",
+          "Radix primitives",
+          "lucide-react",
+          "Plus Jakarta Sans",
+          "Lora serif",
+        ],
+        features: [
+          { id: "fe1", label: "App Router + 路由分组（workspace / utility）" },
+          { id: "fe2", label: "React Context 状态（无 Redux / Zustand）" },
+          { id: "fe3", label: "Standalone build（Docker 友好）" },
+          { id: "fe4", label: "3 主题 × 2 语言" },
+        ],
+      },
+      {
+        id: "sk-backend",
+        label: "后端 Stack",
+        description: "Python 3.11+ + FastAPI + LlamaIndex + 进程内向量。",
+        tags: [
+          "Python 3.11+",
+          "FastAPI",
+          "uvicorn ASGI",
+          "Pydantic 2",
+          "LlamaIndex",
+          "OpenAI SDK",
+          "Anthropic SDK",
+          "SQLite",
+          "WebSocket",
+        ],
+        features: [
+          { id: "be1", label: "Capability-driven orchestration" },
+          { id: "be2", label: "ToolRegistry + CapabilityRegistry 双注册表" },
+          { id: "be3", label: "进程内向量索引（无外部 Chroma / Qdrant）" },
+          { id: "be4", label: "Pre-commit: ruff / ruff-format / mypy / bandit / detect-secrets / prettier" },
+        ],
+      },
+      {
+        id: "sk-llm",
+        label: "LLM Provider 矩阵（20+）",
+        description: "OpenAI 兼容协议 + 各家私有 SDK；运行时 catalog 切换无需重启。",
+        tags: [
+          "OpenAI",
+          "Anthropic",
+          "DeepSeek",
+          "Gemini",
+          "DashScope (Qwen)",
+          "智谱 GLM",
+          "月之暗面 Kimi",
+          "MiniMax",
+          "Mistral",
+          "Groq",
+          "豆包 / 火山引擎",
+          "BytePlus",
+          "Stepfun",
+          "百度千帆",
+          "OpenRouter",
+          "AIHubMix",
+          "SiliconFlow",
+          "Ollama",
+          "LM Studio",
+          "vLLM",
+          "llama.cpp",
+          "Azure OpenAI",
+          "GitHub Copilot",
+        ],
+      },
+      {
+        id: "sk-embedding",
+        label: "Embedding Provider（9 家）",
+        tags: ["OpenAI", "Cohere", "Jina", "Ollama", "vLLM", "Azure OpenAI", "Aliyun (Qwen)", "SiliconFlow", "Custom"],
+      },
+      {
+        id: "sk-search",
+        label: "Web Search Provider（7 家）",
+        tags: ["Brave", "Tavily", "Jina", "SearXNG", "DuckDuckGo", "Perplexity", "Serper"],
+      },
+      {
+        id: "sk-storage",
+        label: "数据存储",
+        description: "本地优先；无需外部数据库或向量服务即可全功能运行。",
+        tags: ["SQLite", "本地文件系统", "进程内向量索引", "可选: Redis（未启用）"],
+      },
+      {
+        id: "sk-deploy",
+        label: "构建 / 部署",
+        description: "多阶段 Docker；GHCR 多平台镜像；docker-compose 单容器一键起。",
+        tags: ["Multi-stage Dockerfile", "docker-compose", "GHCR", "linux/amd64", "linux/arm64", "Next.js standalone", "Python 3.12 base"],
+      },
+      {
+        id: "sk-doc-formats",
+        label: "支持文档格式（提取层）",
+        tags: ["PDF (PyMuPDF)", "DOCX (python-docx)", "XLSX (openpyxl)", "PPTX", "Markdown", "Plain Text", "LaTeX (.tex)"],
+      },
+    ],
+  },
+
+  // =====================================================================
+  // 5. FRONTEND STATUS — 前端框架情况
+  // =====================================================================
+  {
+    id: "frontend-status",
+    label: "Frontend · 前端框架情况",
+    description: "用最新主版本；标准 App Router 结构；状态管理保守（Context + localStorage）。",
+    modules: [
+      {
+        id: "fs-version",
+        label: "版本健康度",
+        description: "几乎所有库都在最新主版本；Tailwind 还在 v3 line（v4 已发布）。",
+        tags: ["Next.js 16 ✅", "React 19 ✅", "TypeScript 5 strict ✅", "Tailwind 3.4 ⚠ v4 待升级", "Node ≥18"],
+      },
+      {
+        id: "fs-routes",
+        label: "路由结构（15 个用户路由 + 1 个 dev）",
+        description: "App Router with route groups。",
+        submodules: [
+          { id: "rt-ws", label: "Workspace 组（5 个）", description: "/ /chat[/sessionId] /agents[/botId/chat] /co-writer[/docId] /book /playground" },
+          { id: "rt-ut", label: "Utility 组（10 个）", description: "/knowledge /settings /notebook /memory /space[/memory|notebooks|questions|skills] /dev" },
+        ],
+      },
+      {
+        id: "fs-design",
+        label: "设计系统",
+        description: "Tailwind + CSS variables 实现 3 套主题；8 个核心 token。",
+        tags: ["Light", "Dark", "Glass", "--background", "--foreground", "--primary", "--secondary", "--card", "--border", "--muted-foreground"],
+      },
+      {
+        id: "fs-i18n",
+        label: "国际化",
+        description: "react-i18next 单 namespace；纯字符串 key 而非嵌套结构。",
+        tags: ["English", "中文（简体）"],
+      },
+      {
+        id: "fs-realtime",
+        label: "实时层",
+        description: "1 个 unified WebSocket 入口；30s 心跳；自动重连；resume_from 续传。",
+        tags: ["UnifiedWSClient", "30s heartbeat", "Auto-reconnect (max 5)", "resume_from"],
+      },
+      {
+        id: "fs-state",
+        label: "状态管理",
+        description: "React Context + localStorage 持久化；无外部状态库。",
+        tags: ["AppShellContext", "UnifiedChatContext", "localStorage", "Custom window events"],
+      },
+      {
+        id: "fs-build",
+        label: "构建配置",
+        tags: ["output=standalone", "Turbopack 可选", "Mermaid + Cytoscape 已配 alias", "i18n parity check 脚本", "Playwright UI audit 脚本"],
+      },
+      {
+        id: "fs-gaps",
+        label: "已识别的前端缺口",
+        description: "做新开发前要看到的几个真实问题。",
+        status: "wip",
+        features: [
+          { id: "g1", label: "无前端单测 / E2E 测试", status: "planned" },
+          { id: "g2", label: "无 Storybook / 组件 sandbox", status: "planned" },
+          { id: "g3", label: "巨型 page 文件（co-writer / playground / agents 各 2000+ 行）", status: "wip" },
+          { id: "g4", label: "WS 消息类型 FE↔BE 未共享（codegen 缺失）", status: "planned" },
+          { id: "g5", label: "ui/ 原语库只有 1 个 Button（设计系统层薄）", status: "planned" },
+        ],
+      },
+    ],
+  },
+
+  // =====================================================================
+  // 6. FORK META — Path B 软 fork 治理（保留必要信息）
+  // =====================================================================
   {
     id: "fork-meta",
-    label: "Fork meta (Path B)",
-    description: "Soft-fork governance, upstream observation, conventions.",
+    label: "Fork · Path B 软 fork",
+    description: "本仓库是 HKUDS/DeepTutor 的 fork，用 Path B 策略（被动观察 + 选择性 cherry-pick）。",
     modules: [
       {
-        id: "fm-architecture",
-        label: "Path B architecture",
-        path: "../README.fork.md",
-        description: "Bare repo + single worktree. upstream is passive ref. main retired.",
+        id: "fm-arch",
+        label: "Path B 架构",
+        description: "Bare repo + 单工作树；upstream 作被动参考；main 已 retire；只用 custom/dev 分支。",
         status: "shipped",
+        tags: ["bare repo", "single worktree", "custom/dev = default", "upstream = passive"],
       },
       {
-        id: "fm-agents-rules",
-        label: "Agent rules",
-        path: "AGENTS.fork.md",
-        description: "Commit prefix conventions, provenance checks, forbidden actions.",
-        status: "shipped",
+        id: "fm-rules",
+        label: "Commit 前缀规范",
+        description: "强制前缀以追溯归属；详见 AGENTS.fork.md。",
+        features: [
+          { id: "r1", label: "[FORK-FEAT] 新增功能" },
+          { id: "r2", label: "[FORK-MOD] 修改上游代码" },
+          { id: "r3", label: "[FORK-FIX] fork 特有 bug 修" },
+          { id: "r4", label: "[FORK-DEL] 删除上游代码" },
+          { id: "r5", label: "[UP-PICK] <sha> 从上游 cherry-pick" },
+        ],
       },
       {
-        id: "fm-claude-md",
-        label: "Claude entry point",
-        path: "CLAUDE.md",
-        description: "Read-order shortcut for Claude Code agents.",
-        status: "shipped",
-      },
-      {
-        id: "fm-upstream-tools",
-        label: "Upstream observation",
-        description: "git aliases (upstream-status / upstream-diff / upstream-pick) + upstream-status.sh + 90-day fetch log.",
-        status: "shipped",
-      },
-      {
-        id: "fm-90day-review",
-        label: "90-day review (scheduled)",
-        description: "Routine fires on 2026-07-29 to evaluate KEEP / REBASE / ABANDON.",
+        id: "fm-90day",
+        label: "90 天观察机制",
+        description: "scheduled agent 在 2026-07-29 自动评估 KEEP / REBASE / ABANDON。",
         status: "wip",
       },
     ],
