@@ -8,6 +8,7 @@ import { useAppShell } from "@/context/AppShellContext";
 import {
   BookOpen,
   Bot,
+  Code,
   Github,
   LayoutGrid,
   Library,
@@ -41,6 +42,7 @@ const PRIMARY_NAV: NavEntry[] = [
 ];
 
 const SECONDARY_NAV: NavEntry[] = [
+  { href: "/dev", label: "Dev", icon: Code },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 const DEFAULT_SESSION_VIEWPORT_CLASS_NAME = "max-h-[112px]";
