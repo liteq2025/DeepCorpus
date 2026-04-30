@@ -98,8 +98,7 @@ DeepCorpus/
 ├── .git                    # text pointer → ./.bare
 ├── DeepCorpus-dev/         # YOU ARE HERE (custom/dev branch, default)
 ├── upstream-status.sh      # Upstream observation tool
-├── README.fork.md          # Human-readable fork manual
-└── sync-upstream.sh        # [DEPRECATED stub — Path B retired auto-sync]
+└── README.fork.md          # Human-readable fork manual
 ```
 
 Note: agents should treat `DeepCorpus-dev/` as the project root.
