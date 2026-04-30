@@ -5,6 +5,7 @@ import {
   DEV_REGISTRY,
   type RegistryGroup,
   type ModuleStatus,
+  type TagEntry,
 } from "@/lib/dev-registry";
 
 const STATUS_STYLES: Record<ModuleStatus, string> = {
@@ -24,17 +25,27 @@ function StatusPill({ status }: { status?: ModuleStatus }) {
   );
 }
 
-function TagChips({ tags }: { tags: string[] }) {
+function TagChips({ tags }: { tags: TagEntry[] }) {
   return (
     <div className="flex flex-wrap gap-1.5">
-      {tags.map((tag) => (
-        <span
-          key={tag}
-          className="inline-flex items-center rounded-full border border-[var(--border)] bg-[var(--card)] px-2 py-0.5 text-[11px] text-[var(--foreground)]"
-        >
-          {tag}
-        </span>
-      ))}
+      {tags.map((t, i) => {
+        const label = typeof t === "string" ? t : t.label;
+        const hint = typeof t === "string" ? undefined : t.hint;
+        const key = typeof t === "string" ? t : `${t.label}:${t.hint}`;
+        return (
+          <span
+            key={`${key}-${i}`}
+            className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--card)] px-2 py-0.5 text-[11px]"
+          >
+            <span className="text-[var(--foreground)]">{label}</span>
+            {hint && (
+              <span className="text-[10px] text-[var(--muted-foreground)]">
+                {`{${hint}}`}
+              </span>
+            )}
+          </span>
+        );
+      })}
     </div>
   );
 }
@@ -57,8 +68,15 @@ function GroupTable({ group }: { group: RegistryGroup }) {
               key={mod.id}
               className="border-t border-[var(--border)] align-top hover:bg-[var(--secondary)]/20"
             >
-              <td className="px-4 py-3 font-medium text-[var(--foreground)]">
-                {mod.label}
+              <td className="px-4 py-3">
+                <span className="font-medium text-[var(--foreground)]">
+                  {mod.label}
+                </span>
+                {mod.hint && (
+                  <span className="ml-1.5 text-[11px] text-[var(--muted-foreground)]">
+                    {`{${mod.hint}}`}
+                  </span>
+                )}
               </td>
               <td className="px-4 py-3 font-mono text-[var(--foreground)]">
                 {mod.tags.length}
