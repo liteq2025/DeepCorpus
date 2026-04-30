@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ChevronRight, ChevronDown, FileCode, ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { FileCode } from "lucide-react";
 import {
   DEV_REGISTRY,
   type ModuleEntry,
@@ -9,9 +9,7 @@ import {
   type ModuleStatus,
 } from "@/lib/dev-registry";
 
-type Selection =
-  | { kind: "group"; group: RegistryGroup }
-  | { kind: "module"; group: RegistryGroup; module: ModuleEntry; trail: ModuleEntry[] };
+// ─── primitives ────────────────────────────────────────────────────────────
 
 const STATUS_STYLES: Record<ModuleStatus, string> = {
   shipped: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
@@ -56,174 +54,9 @@ function TagChips({ tags }: { tags?: string[] }) {
   );
 }
 
-interface TreeNodeProps {
-  module: ModuleEntry;
-  group: RegistryGroup;
-  trail: ModuleEntry[];
-  depth: number;
-  selectedId: string | null;
-  onSelect: (sel: Selection) => void;
-}
-
-function TreeNode({ module: mod, group, trail, depth, selectedId, onSelect }: TreeNodeProps) {
-  const [expanded, setExpanded] = useState(depth < 1);
-  const hasChildren = !!mod.submodules?.length;
-  const isSelected = selectedId === mod.id;
-
+function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div>
-      <button
-        type="button"
-        onClick={() => onSelect({ kind: "module", group, module: mod, trail })}
-        className={`group flex w-full items-center gap-1 rounded px-2 py-1 text-left text-[13px] transition ${
-          isSelected
-            ? "bg-[var(--primary)]/15 text-[var(--foreground)]"
-            : "text-[var(--muted-foreground)] hover:bg-[var(--secondary)]/50 hover:text-[var(--foreground)]"
-        }`}
-        style={{ paddingLeft: `${depth * 12 + 8}px` }}
-      >
-        {hasChildren ? (
-          <span
-            role="button"
-            tabIndex={0}
-            onClick={(e) => {
-              e.stopPropagation();
-              setExpanded((v) => !v);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.stopPropagation();
-                setExpanded((v) => !v);
-              }
-            }}
-            className="-ml-1 inline-flex h-4 w-4 items-center justify-center rounded hover:bg-[var(--secondary)]"
-          >
-            {expanded ? (
-              <ChevronDown className="h-3 w-3" />
-            ) : (
-              <ChevronRight className="h-3 w-3" />
-            )}
-          </span>
-        ) : (
-          <span className="-ml-1 inline-block h-4 w-4" />
-        )}
-        <span className="flex-1 truncate">{mod.label}</span>
-        <StatusPill status={mod.status} />
-      </button>
-      {hasChildren && expanded && (
-        <div>
-          {mod.submodules!.map((child) => (
-            <TreeNode
-              key={child.id}
-              module={child}
-              group={group}
-              trail={[...trail, mod]}
-              depth={depth + 1}
-              selectedId={selectedId}
-              onSelect={onSelect}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function GroupSection({
-  group,
-  selectedId,
-  onSelect,
-}: {
-  group: RegistryGroup;
-  selectedId: string | null;
-  onSelect: (sel: Selection) => void;
-}) {
-  const isGroupSelected = selectedId === group.id;
-  return (
-    <div className="mb-3">
-      <button
-        type="button"
-        onClick={() => onSelect({ kind: "group", group })}
-        className={`flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-[12px] font-semibold uppercase tracking-wide transition ${
-          isGroupSelected
-            ? "bg-[var(--primary)]/15 text-[var(--foreground)]"
-            : "text-[var(--muted-foreground)] hover:bg-[var(--secondary)]/40 hover:text-[var(--foreground)]"
-        }`}
-      >
-        <span>{group.label}</span>
-        <span className="text-[10px] font-normal lowercase text-[var(--muted-foreground)]">
-          {group.modules.length} modules
-        </span>
-      </button>
-      <div className="mt-0.5">
-        {group.modules.map((mod) => (
-          <TreeNode
-            key={mod.id}
-            module={mod}
-            group={group}
-            trail={[]}
-            depth={0}
-            selectedId={selectedId}
-            onSelect={onSelect}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function GroupOverview({ group }: { group: RegistryGroup }) {
-  const totalModules = group.modules.length;
-  const totalSubmodules = group.modules.reduce(
-    (sum, m) => sum + (m.submodules?.length ?? 0),
-    0,
-  );
-  const shipped = group.modules.filter((m) => m.status === "shipped").length;
-  const wip = group.modules.filter((m) => m.status === "wip").length;
-
-  return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold text-[var(--foreground)]">{group.label}</h1>
-        {group.description && (
-          <p className="mt-1 text-sm text-[var(--muted-foreground)]">{group.description}</p>
-        )}
-      </header>
-      <div className="grid grid-cols-4 gap-3">
-        <Stat label="Modules" value={totalModules} />
-        <Stat label="Submodules" value={totalSubmodules} />
-        <Stat label="Shipped" value={shipped} />
-        <Stat label="WIP" value={wip} />
-      </div>
-      <div>
-        <h2 className="mb-2 text-sm font-semibold text-[var(--foreground)]">Modules</h2>
-        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-          {group.modules.map((m) => (
-            <div
-              key={m.id}
-              className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-3"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-[13px] font-medium text-[var(--foreground)]">
-                  {m.label}
-                </span>
-                <StatusPill status={m.status} />
-              </div>
-              {m.path && <div className="mt-1.5"><PathChip path={m.path} /></div>}
-              <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--muted-foreground)]">
-                {m.description}
-              </p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-3">
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--card)] px-4 py-3">
       <div className="text-[11px] uppercase tracking-wide text-[var(--muted-foreground)]">
         {label}
       </div>
@@ -234,242 +67,208 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-type Tab = "overview" | "design" | "components" | "tokens";
+// ─── module section (one module + its submodules + features) ──────────────
 
-const TABS: { id: Tab; label: string; available: boolean }[] = [
-  { id: "overview", label: "Overview", available: true },
-  { id: "components", label: "Components", available: false },
-  { id: "design", label: "Design", available: false },
-  { id: "tokens", label: "Tokens", available: false },
-];
-
-function ModuleDetail({
-  group,
-  module: mod,
-  trail,
-}: {
-  group: RegistryGroup;
-  module: ModuleEntry;
-  trail: ModuleEntry[];
-}) {
-  const [tab, setTab] = useState<Tab>("overview");
+function ModuleSection({ module: mod }: { module: ModuleEntry }) {
+  const subCount = mod.submodules?.length ?? 0;
+  const featCount = mod.features?.length ?? 0;
+  const tagCount = mod.tags?.length ?? 0;
 
   return (
-    <div className="space-y-6">
+    <article className="border-t border-[var(--border)] py-6 first:border-t-0 first:pt-0">
       <header>
-        <nav className="mb-2 flex flex-wrap items-center gap-1 text-[12px] text-[var(--muted-foreground)]">
-          <span>{group.label}</span>
-          {trail.map((t) => (
-            <span key={t.id} className="flex items-center gap-1">
-              <ChevronRight className="h-3 w-3" />
-              <span>{t.label}</span>
-            </span>
-          ))}
-          <ChevronRight className="h-3 w-3" />
-          <span className="text-[var(--foreground)]">{mod.label}</span>
-        </nav>
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-2xl font-semibold text-[var(--foreground)]">{mod.label}</h1>
-          <StatusPill status={mod.status} />
+          <h3 className="text-lg font-semibold text-[var(--foreground)]">{mod.label}</h3>
+          <div className="flex shrink-0 items-center gap-2">
+            {subCount > 0 && (
+              <span className="text-[11px] text-[var(--muted-foreground)]">
+                {subCount} sub
+              </span>
+            )}
+            {featCount > 0 && (
+              <span className="text-[11px] text-[var(--muted-foreground)]">
+                {featCount} feat
+              </span>
+            )}
+            <StatusPill status={mod.status} />
+          </div>
         </div>
-        {mod.path && <div className="mt-2"><PathChip path={mod.path} /></div>}
-        <p className="mt-3 text-sm leading-relaxed text-[var(--muted-foreground)]">
+        {mod.path && <div className="mt-1.5"><PathChip path={mod.path} /></div>}
+        <p className="mt-2 text-[13px] leading-relaxed text-[var(--muted-foreground)]">
           {mod.description}
         </p>
-        {mod.tags && mod.tags.length > 0 && (
+        {tagCount > 0 && (
           <div className="mt-3">
             <TagChips tags={mod.tags} />
           </div>
         )}
       </header>
 
-      <div className="border-b border-[var(--border)]">
-        <div className="flex gap-1">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              disabled={!t.available}
-              onClick={() => t.available && setTab(t.id)}
-              className={`relative px-3 py-1.5 text-[13px] transition ${
-                tab === t.id
-                  ? "text-[var(--foreground)]"
-                  : t.available
-                    ? "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                    : "cursor-not-allowed text-[var(--muted-foreground)]/50"
-              }`}
+      {subCount > 0 && (
+        <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
+          {mod.submodules!.map((sub) => (
+            <div
+              key={sub.id}
+              className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-3"
             >
-              {t.label}
-              {!t.available && (
-                <span className="ml-1 text-[10px] uppercase">soon</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate text-[13px] font-medium text-[var(--foreground)]">
+                  {sub.label}
+                </span>
+                <StatusPill status={sub.status} />
+              </div>
+              {sub.path && <div className="mt-1.5"><PathChip path={sub.path} /></div>}
+              {sub.description && (
+                <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--muted-foreground)]">
+                  {sub.description}
+                </p>
               )}
-              {tab === t.id && (
-                <span className="absolute inset-x-0 -bottom-px h-0.5 bg-[var(--primary)]" />
+              {sub.tags && sub.tags.length > 0 && (
+                <div className="mt-2">
+                  <TagChips tags={sub.tags} />
+                </div>
               )}
-            </button>
+            </div>
           ))}
         </div>
+      )}
+
+      {featCount > 0 && (
+        <ul className="mt-4 space-y-1.5">
+          {mod.features!.map((f) => (
+            <li
+              key={f.id}
+              className="flex flex-col gap-1 rounded border border-[var(--border)]/50 bg-[var(--card)]/60 px-3 py-2"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <span className="text-[13px] font-medium text-[var(--foreground)]">
+                  {f.label}
+                </span>
+                <StatusPill status={f.status} />
+              </div>
+              {f.description && (
+                <p className="text-[12px] leading-relaxed text-[var(--muted-foreground)]">
+                  {f.description}
+                </p>
+              )}
+              {f.tags && f.tags.length > 0 && <TagChips tags={f.tags} />}
+            </li>
+          ))}
+        </ul>
+      )}
+    </article>
+  );
+}
+
+// ─── group view (entire group rendered inline) ────────────────────────────
+
+function GroupView({ group }: { group: RegistryGroup }) {
+  const totalSubmodules = group.modules.reduce(
+    (sum, m) => sum + (m.submodules?.length ?? 0),
+    0,
+  );
+  const totalFeatures = group.modules.reduce(
+    (sum, m) => sum + (m.features?.length ?? 0),
+    0,
+  );
+
+  return (
+    <div className="space-y-8">
+      <header>
+        <h1 className="text-3xl font-semibold text-[var(--foreground)]">
+          {group.label}
+        </h1>
+        {group.description && (
+          <p className="mt-2 max-w-3xl text-[14px] leading-relaxed text-[var(--muted-foreground)]">
+            {group.description}
+          </p>
+        )}
+        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4 max-w-2xl">
+          <Stat label="Modules" value={group.modules.length} />
+          <Stat label="Submodules" value={totalSubmodules} />
+          <Stat label="Features" value={totalFeatures} />
+          <Stat
+            label="Shipped"
+            value={`${group.modules.filter((m) => m.status === "shipped").length}/${group.modules.length}`}
+          />
+        </div>
+      </header>
+
+      <div>
+        {group.modules.map((mod) => (
+          <ModuleSection key={mod.id} module={mod} />
+        ))}
       </div>
-
-      {tab === "overview" && (
-        <div className="space-y-6">
-          {mod.submodules && mod.submodules.length > 0 && (
-            <section>
-              <h2 className="mb-2 text-sm font-semibold text-[var(--foreground)]">
-                Submodules ({mod.submodules.length})
-              </h2>
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                {mod.submodules.map((sub) => (
-                  <div
-                    key={sub.id}
-                    className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-3"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-[13px] font-medium text-[var(--foreground)]">
-                        {sub.label}
-                      </span>
-                      <StatusPill status={sub.status} />
-                    </div>
-                    {sub.path && <div className="mt-1.5"><PathChip path={sub.path} /></div>}
-                    {sub.description && (
-                      <p className="mt-1.5 text-[12px] leading-relaxed text-[var(--muted-foreground)]">
-                        {sub.description}
-                      </p>
-                    )}
-                    {sub.tags && sub.tags.length > 0 && (
-                      <div className="mt-2">
-                        <TagChips tags={sub.tags} />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {mod.features && mod.features.length > 0 && (
-            <section>
-              <h2 className="mb-2 text-sm font-semibold text-[var(--foreground)]">
-                Features ({mod.features.length})
-              </h2>
-              <ul className="space-y-2">
-                {mod.features.map((f) => (
-                  <li
-                    key={f.id}
-                    className="rounded-lg border border-[var(--border)] bg-[var(--card)] p-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-[13px] font-medium text-[var(--foreground)]">
-                        {f.label}
-                      </span>
-                      <StatusPill status={f.status} />
-                    </div>
-                    {f.description && (
-                      <p className="mt-1 text-[12px] leading-relaxed text-[var(--muted-foreground)]">
-                        {f.description}
-                      </p>
-                    )}
-                    {f.tags && f.tags.length > 0 && (
-                      <div className="mt-2">
-                        <TagChips tags={f.tags} />
-                      </div>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {mod.references && mod.references.length > 0 && (
-            <section>
-              <h2 className="mb-2 text-sm font-semibold text-[var(--foreground)]">
-                References
-              </h2>
-              <ul className="space-y-1 text-[12px]">
-                {mod.references.map((r, i) => (
-                  <li key={i} className="flex items-center gap-1 text-[var(--muted-foreground)]">
-                    {r.href ? (
-                      <a
-                        href={r.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 hover:text-[var(--foreground)]"
-                      >
-                        {r.label}
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    ) : (
-                      <code className="font-mono">{r.label}</code>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {(!mod.submodules || mod.submodules.length === 0) &&
-            (!mod.features || mod.features.length === 0) && (
-              <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--card)]/50 p-6 text-center text-[12px] text-[var(--muted-foreground)]">
-                No submodules or features registered yet. Edit{" "}
-                <code className="font-mono">web/lib/dev-registry.ts</code> to extend.
-              </div>
-            )}
-        </div>
-      )}
-
-      {tab !== "overview" && (
-        <div className="rounded-lg border border-dashed border-[var(--border)] bg-[var(--card)]/50 p-6 text-center text-[12px] text-[var(--muted-foreground)]">
-          The <strong>{tab}</strong> view is reserved. Hook it up when needed
-          (e.g., scrape Tailwind tokens, mount Storybook, link Figma frames).
-        </div>
-      )}
     </div>
   );
 }
 
-export default function DevDashboard() {
-  const [selection, setSelection] = useState<Selection>(() => ({
-    kind: "group",
-    group: DEV_REGISTRY[0],
-  }));
+// ─── left sidebar: 6 group buttons, no tree ───────────────────────────────
 
-  const selectedId = useMemo(
-    () => (selection.kind === "module" ? selection.module.id : selection.group.id),
-    [selection],
+function GroupNav({
+  selectedId,
+  onSelect,
+}: {
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <nav className="flex flex-col gap-1">
+      {DEV_REGISTRY.map((g) => {
+        const active = g.id === selectedId;
+        const moduleCount = g.modules.length;
+        return (
+          <button
+            key={g.id}
+            type="button"
+            onClick={() => onSelect(g.id)}
+            className={`flex items-center justify-between rounded-md px-3 py-2 text-left text-[13px] transition ${
+              active
+                ? "bg-[var(--primary)]/15 text-[var(--foreground)]"
+                : "text-[var(--muted-foreground)] hover:bg-[var(--secondary)]/50 hover:text-[var(--foreground)]"
+            }`}
+          >
+            <span className="truncate font-medium">{g.label}</span>
+            <span
+              className={`ml-2 inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[10px] ${
+                active
+                  ? "bg-[var(--primary)]/20 text-[var(--foreground)]"
+                  : "bg-[var(--secondary)]/40 text-[var(--muted-foreground)]"
+              }`}
+            >
+              {moduleCount}
+            </span>
+          </button>
+        );
+      })}
+    </nav>
   );
+}
+
+// ─── main ─────────────────────────────────────────────────────────────────
+
+export default function DevDashboard() {
+  const [selectedId, setSelectedId] = useState<string>(DEV_REGISTRY[0].id);
+  const group =
+    DEV_REGISTRY.find((g) => g.id === selectedId) ?? DEV_REGISTRY[0];
 
   return (
     <div className="flex h-full">
-      <aside className="w-72 shrink-0 overflow-y-auto border-r border-[var(--border)] bg-[var(--card)]/40 px-3 py-4">
+      <aside className="w-60 shrink-0 overflow-y-auto border-r border-[var(--border)] bg-[var(--card)]/40 px-3 py-5">
         <div className="mb-3 px-2">
           <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
             Dev Console
           </h2>
           <p className="mt-1 text-[11px] text-[var(--muted-foreground)]/80">
-            Module + feature registry · click to inspect
+            产品 / 技术维度速览
           </p>
         </div>
-        {DEV_REGISTRY.map((g) => (
-          <GroupSection
-            key={g.id}
-            group={g}
-            selectedId={selectedId}
-            onSelect={setSelection}
-          />
-        ))}
+        <GroupNav selectedId={selectedId} onSelect={setSelectedId} />
       </aside>
 
-      <section className="flex-1 overflow-y-auto px-8 py-8">
-        <div className="mx-auto max-w-4xl">
-          {selection.kind === "group" ? (
-            <GroupOverview group={selection.group} />
-          ) : (
-            <ModuleDetail
-              group={selection.group}
-              module={selection.module}
-              trail={selection.trail}
-            />
-          )}
+      <section className="flex-1 overflow-y-auto px-10 py-8">
+        <div className="mx-auto max-w-5xl">
+          <GroupView group={group} />
         </div>
       </section>
     </div>
