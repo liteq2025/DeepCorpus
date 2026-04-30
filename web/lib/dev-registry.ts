@@ -19,6 +19,8 @@ export interface FeatureEntry {
   id: string;
   label: string;
   description?: string;
+  /** Big-number / headline value for stats-layout tiles (e.g. "20+", "6"). */
+  value?: string;
   status?: ModuleStatus;
   tags?: string[];
 }
@@ -35,10 +37,14 @@ export interface ModuleEntry {
   references?: { label: string; href?: string }[];
 }
 
+export type GroupLayout = "stats" | "modules" | "table" | "cards";
+
 export interface RegistryGroup {
   id: string;
   label: string;
   description?: string;
+  /** Render strategy. Default: "modules" (sections with submodules grid). */
+  layout?: GroupLayout;
   modules: ModuleEntry[];
 }
 
@@ -51,6 +57,7 @@ export const DEV_REGISTRY: RegistryGroup[] = [
     label: "Overview · 产品全貌",
     description:
       "DeepCorpus 是基于 HKUDS/DeepTutor 的重度二开 fork。Capability-driven agent 工作台 — 对话即入口，9 大功能模块，6 种 AI 模式，7 类智能工具，20+ LLM provider 兼容，本地优先（SQLite + 进程内向量）。",
+    layout: "stats",
     modules: [
       {
         id: "ov-pitch",
@@ -71,18 +78,18 @@ export const DEV_REGISTRY: RegistryGroup[] = [
         label: "关键数字（可量化规模）",
         description: "扫一眼项目体量，无需读代码。",
         features: [
-          { id: "n1", label: "AI 模式（Capability）", description: "6 个 — chat, deep_solve, deep_question, deep_research, math_animator, visualize" },
-          { id: "n2", label: "智能工具（Tool）", description: "7 类 — RAG / 网页搜索 / 代码沙箱 / 推理 / 头脑风暴 / 论文检索 / 几何分析" },
-          { id: "n3", label: "产品功能模块", description: "9 个大模块 + 30+ 子功能" },
-          { id: "n4", label: "LLM Provider 兼容", description: "20+（OpenAI / Anthropic / DeepSeek / Gemini / Qwen / GLM / Kimi / 豆包 / Ollama / LM Studio …）" },
-          { id: "n5", label: "Embedding Provider", description: "9 家（OpenAI / Cohere / Jina / Ollama / vLLM / Azure / Aliyun / SiliconFlow / Custom）" },
-          { id: "n6", label: "搜索 Provider", description: "7 家（Brave / Tavily / Jina / SearXNG / DuckDuckGo / Perplexity / Serper）" },
-          { id: "n7", label: "前端路由", description: "15 个用户路由（5 workspace + 10 utility）" },
-          { id: "n8", label: "REST API 端点", description: "154 个，分布在 22 个 router 模块" },
-          { id: "n9", label: "前端组件", description: "64 个 .tsx 组件，分 12 类目录" },
-          { id: "n10", label: "WebSocket 入口", description: "1 个 unified（多路复用 chat / sessions / turns）" },
-          { id: "n11", label: "支持文档格式", description: "PDF / DOCX / XLSX / PPTX / MD / TXT" },
-          { id: "n12", label: "主题 / 语言", description: "3 主题（light / dark / glass）+ 中英双语" },
+          { id: "n1", label: "AI 模式 Capability", value: "6", description: "chat / deep_solve / deep_question / deep_research / math_animator / visualize" },
+          { id: "n2", label: "智能工具 Tool", value: "7", description: "RAG / 网页搜索 / 代码沙箱 / 推理 / 头脑风暴 / 论文检索 / 几何分析" },
+          { id: "n3", label: "产品功能模块", value: "9", description: "大模块 + 30+ 子功能" },
+          { id: "n4", label: "LLM Provider", value: "20+", description: "OpenAI / Anthropic / DeepSeek / Gemini / Qwen / GLM / Kimi / 豆包 / Ollama 等" },
+          { id: "n5", label: "Embedding Provider", value: "9", description: "OpenAI / Cohere / Jina / Ollama / vLLM / Azure / Aliyun / SiliconFlow / Custom" },
+          { id: "n6", label: "搜索 Provider", value: "7", description: "Brave / Tavily / Jina / SearXNG / DuckDuckGo / Perplexity / Serper" },
+          { id: "n7", label: "前端路由", value: "15", description: "5 workspace + 10 utility" },
+          { id: "n8", label: "REST API 端点", value: "154", description: "22 个 router 模块" },
+          { id: "n9", label: "前端组件", value: "64", description: "12 类目录 + 3 顶层" },
+          { id: "n10", label: "WebSocket 入口", value: "1", description: "unified — chat / sessions / turns 多路复用" },
+          { id: "n11", label: "文档格式", value: "7", description: "PDF / DOCX / XLSX / PPTX / MD / TXT / TeX" },
+          { id: "n12", label: "主题 / 语言", value: "3 × 2", description: "light / dark / glass × 中 / 英" },
         ],
       },
     ],
@@ -95,6 +102,7 @@ export const DEV_REGISTRY: RegistryGroup[] = [
     id: "features",
     label: "Features · 功能模块",
     description: "9 大功能模块、30+ 子功能。这是用户真正用到的产品面。",
+    layout: "modules",
     modules: [
       {
         id: "ft-chat",
@@ -226,6 +234,7 @@ export const DEV_REGISTRY: RegistryGroup[] = [
     id: "components",
     label: "Components · 前端组件库",
     description: "12 类组件目录、64 个 .tsx 文件 + 3 个顶层组件。设计为 feature-folder 结构（一类功能一个目录）。",
+    layout: "table",
     modules: [
       {
         id: "co-knowledge",
@@ -354,6 +363,7 @@ export const DEV_REGISTRY: RegistryGroup[] = [
     id: "stack",
     label: "Stack · 技术栈",
     description: "全栈现代生态；前端最新主版本；本地优先无需外部数据库。",
+    layout: "table",
     modules: [
       {
         id: "sk-frontend",
@@ -466,6 +476,7 @@ export const DEV_REGISTRY: RegistryGroup[] = [
     id: "frontend-status",
     label: "Frontend · 前端框架情况",
     description: "用最新主版本；标准 App Router 结构；状态管理保守（Context + localStorage）。",
+    layout: "cards",
     modules: [
       {
         id: "fs-version",
@@ -534,6 +545,7 @@ export const DEV_REGISTRY: RegistryGroup[] = [
     id: "fork-meta",
     label: "Fork · Path B 软 fork",
     description: "本仓库是 HKUDS/DeepTutor 的 fork，用 Path B 策略（被动观察 + 选择性 cherry-pick）。",
+    layout: "cards",
     modules: [
       {
         id: "fm-arch",
