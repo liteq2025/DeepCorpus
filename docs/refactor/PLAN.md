@@ -17,8 +17,8 @@
 | 阶段 | 主题 | 状态 | 估时 | 验收标准 | 详情 |
 |---|---|---|---|---|---|
 | **A** | Agent 开发基建（先于一切 UI 改动） | ✅ completed | 1.5 天 | `npm run check:e2e` 本地全绿（96 项检查 / ~3 min） | [phase-A-dev-infra.md](./phase-A-dev-infra.md) |
-| **0** | shadcn 接入 + token 对齐 + 去 glass/snow | 🟡 in-progress | 3 天 | `ui/Button` 替换为 shadcn 版本，b37bl1flo token 全部对齐，glass + snow 主题完全移除，8 个核心原语就位 | [phase-0-shadcn.md](./phase-0-shadcn.md) |
-| **0.5** | Layout 标准化（9 层栈 + sheet-first） | ⏳ pending | 6 天 | 所有 routes 用 `<RouteFrame>` 组合，单 `<main>`，7 个 Modal → Sheet，11 个 `window.confirm()` → AlertDialog | [phase-0.5-layout.md](./phase-0.5-layout.md) |
+| **0** | shadcn 接入 + token 对齐 + 去 glass/snow | ✅ completed | 1 天 | shadcn b37bl1flo 落地，11 个原语就位（button/input/textarea/label/dialog/alert-dialog/sheet/popover/dropdown-menu/tooltip/sonner），glass + snow 主题清掉，`npm run check:e2e` 97 项绿 | [phase-0-shadcn.md](./phase-0-shadcn.md) |
+| **0.5** | Layout 标准化（9 层栈 + sheet-first） | 🟡 next up | 6 天 | 所有 routes 用 `<RouteFrame>` 组合，单 `<main>`，7 个 Modal → Sheet，11 个 `window.confirm()` → AlertDialog | [phase-0.5-layout.md](./phase-0.5-layout.md) |
 | **1** | FE↔BE WS 契约 codegen | ⏳ pending | 1 天 | `make types` 跑通；CI 检测漂移 | （0.5 完成后再写） |
 | **2** | 拆 5 个 mega-page | ⏳ pending | 2 周 | 8,759 行 → ≤ 4,000 行，单文件 ≤ 600 行 | （1 完成后再写） |
 | **3** | 命名 / 边界文档收尾 | ⏳ pending | 2 天 | `KnowledgePage` 物理位置归位；STYLE.md 落地 | （2 完成后再写） |
@@ -64,6 +64,7 @@ pnpm dlx shadcn@latest init --preset b37bl1flo --template next
 
 | 日期 | 阶段 | 事件 |
 |---|---|---|
+| 2026-05-01 | 0 | ✅ Phase 0 完成。shadcn b37bl1flo init + 11 个原语 + Button 迁移到 shadcn API（保留 fork loading/icon 扩展）。Tailwind v3 兼容补丁：去掉 `@import "shadcn/tailwind.css"` / `tw-animate-css` / `outline-ring/50` v4 syntax，装 `tailwindcss-animate`。glass + snow 主题完全移除（globals.css -77 行）。`npm run check:e2e` 97 项检查绿。 |
 | 2026-05-01 | 0 / 0.5 | 写 Phase 0 (`phase-0-shadcn.md`) 和 Phase 0.5 (`phase-0.5-layout.md`) 两份执行规格。基于 Layout 一致性诊断（4 类问题）插入 Phase 0.5。决定：sheet-first overlay 决策（7 个手撸 Modal 全部迁 Sheet，11 个 `window.confirm()` 迁 AlertDialog），Dialog 仅留破坏性确认。Phase 0 → in-progress。 |
 | 2026-05-01 | A | ✅ Phase A 完成。`npm run check:e2e` 本地 96 项检查全绿（lint 0 errors / typecheck 0 / 83 unit / 5 component / 5 smoke / 3 visual）。CI workflow `web-tests.yml` 已就位。`docs/refactor/AGENT_LOOP.md` 落地。Agent 工作循环关上。 |
 | 2026-05-01 | — | 计划文档建仓（`PLAN.md` + `phase-A-dev-infra.md`） |

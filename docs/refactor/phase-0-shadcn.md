@@ -1,6 +1,6 @@
 # Phase 0 — shadcn 接入 + token 对齐 + 去 glass/snow
 
-> **状态**：🟡 in-progress
+> **状态**：✅ completed (2026-05-01)
 > **回到 PLAN.md**：[./PLAN.md](./PLAN.md)
 
 ## 0. 为什么这一阶段
@@ -201,14 +201,14 @@ shadcn `add button` 会写到 `components/ui/button.tsx`（小写）。当前项
 
 ## 5. 完成检查清单
 
-- [ ] 0.1 — shadcn init，components.json + globals.css 的 CSS 变量、tailwind config 都就位
-- [ ] 0.2 — glass + snow 主题完全移除
-- [ ] 0.3 — 字体仍是 Plus Jakarta Sans + Lora
-- [ ] 0.4 — 8 个核心原语装好且各有 1-2 个 vitest + showcase 入口
-- [ ] 0.5 — 现有 Button 替换为 shadcn，所有 import 修正，视觉 baseline 更新
-- [ ] 0.6 — `npm run check:e2e` 全绿
-- [ ] 更新 `PLAN.md`：Phase 0 状态 → ✅，进度日志加一行
-- [ ] 启动 Phase 0.5（layout 标准化）
+- [x] 0.1 — shadcn init，components.json + lib/utils.ts + b37bl1flo token + Tailwind v3 兼容补丁
+- [x] 0.2 — glass + snow 主题完全移除（globals.css -77 行）
+- [x] 0.3 — 字体仍是 Plus Jakarta Sans + Lora（覆盖 shadcn Inter）
+- [x] 0.4 — 11 个原语装好（button/input/textarea/label/dialog/alert-dialog/sheet/popover/dropdown-menu/tooltip/sonner）+ tailwindcss-animate
+- [x] 0.5 — Button 替换为 shadcn API + 保留 fork loading/icon 扩展，showcase + vitest 已迁移，视觉 baseline 已更新（macOS + Linux）
+- [x] 0.6 — `npm run check:e2e` 97 项检查全绿
+- [x] 更新 `PLAN.md`：Phase 0 状态 → ✅，进度日志加一行
+- [ ] 启动 Phase 0.5（layout 标准化）← 下一动作
 
 ## 6. Commit 拆分
 
