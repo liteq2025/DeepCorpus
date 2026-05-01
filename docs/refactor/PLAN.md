@@ -64,6 +64,8 @@ pnpm dlx shadcn@latest init --preset b37bl1flo --template next
 
 | 日期 | 阶段 | 事件 |
 |---|---|---|
+| 2026-05-01 | 0.5 | ✅ 0.5.8 第二个 slice：`/playground` 迁 PageBody + PageHeader（commit `491e6d7`）。单列页面，不需要 RouteFrame；外层 `<div min-h-screen bg-[var(--background)]>` → `<section aria-label overflow-y-auto>`，title 用 PageHeader（font-bold → font-semibold per canonical scale）。0.5.8 进度 2/6（剩 /agents, /co-writer, /chat, /book）。 |
+| 2026-05-01 | 0.5 | ✅ 0.5.6 完成。7 个手撸 Modal 全部迁 Sheet，`common/Modal.tsx` 删除。两个 commit 拆分：(a) `2c4b0eb` CreateKbModal + SaveToNotebookModal + 删 common/Modal；(b) `7a75571` NotebookRecordPicker / HistorySessionPicker / QuestionBankPicker + FilePreviewDrawer 重命名 FilePreviewSheet。所有 showcase 同步、`npm run check:e2e` 112 项绿。 |
 | 2026-05-01 | 0 | ✅ Phase 0 完成。shadcn b37bl1flo init + 11 个原语 + Button 迁移到 shadcn API（保留 fork loading/icon 扩展）。Tailwind v3 兼容补丁：去掉 `@import "shadcn/tailwind.css"` / `tw-animate-css` / `outline-ring/50` v4 syntax，装 `tailwindcss-animate`。glass + snow 主题完全移除（globals.css -77 行）。`npm run check:e2e` 97 项检查绿。 |
 | 2026-05-01 | 0 / 0.5 | 写 Phase 0 (`phase-0-shadcn.md`) 和 Phase 0.5 (`phase-0.5-layout.md`) 两份执行规格。基于 Layout 一致性诊断（4 类问题）插入 Phase 0.5。决定：sheet-first overlay 决策（7 个手撸 Modal 全部迁 Sheet，11 个 `window.confirm()` 迁 AlertDialog），Dialog 仅留破坏性确认。Phase 0 → in-progress。 |
 | 2026-05-01 | A | ✅ Phase A 完成。`npm run check:e2e` 本地 96 项检查全绿（lint 0 errors / typecheck 0 / 83 unit / 5 component / 5 smoke / 3 visual）。CI workflow `web-tests.yml` 已就位。`docs/refactor/AGENT_LOOP.md` 落地。Agent 工作循环关上。 |

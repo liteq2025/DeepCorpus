@@ -27,6 +27,7 @@ import { apiUrl } from "@/lib/api";
 import AssistantResponse from "@/components/common/AssistantResponse";
 import MarkdownRenderer from "@/components/common/MarkdownRenderer";
 import ProcessLogs from "@/components/common/ProcessLogs";
+import { PageBody, PageHeader } from "@/components/layout";
 import ResearchConfigPanel from "@/components/research/ResearchConfigPanel";
 import {
   extractBase64FromDataUrl,
@@ -1850,18 +1851,17 @@ export default function PlaygroundPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-      <div className="mx-auto max-w-5xl px-6 py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--foreground)]">
-            {t("Playground")}
-          </h1>
-          <p className="mt-1 text-[13px] text-[var(--muted-foreground)]">
-            {t(
-              "Explore the building blocks of DeepTutor: reusable tools and higher-level capabilities.",
-            )}
-          </p>
-        </div>
+    <section
+      aria-label={t("Playground content")}
+      className="h-full overflow-y-auto [scrollbar-gutter:stable]"
+    >
+      <PageBody size="default">
+        <PageHeader
+          title={t("Playground")}
+          description={t(
+            "Explore the building blocks of DeepTutor: reusable tools and higher-level capabilities.",
+          )}
+        />
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
@@ -2122,7 +2122,7 @@ export default function PlaygroundPage() {
             </div>
           </div>
         )}
-      </div>
-    </div>
+      </PageBody>
+    </section>
   );
 }
