@@ -1,7 +1,7 @@
 # Phase A — Agent 开发基建
 
-> **状态**：🟡 in-progress
-> **回到 PLAN.md**：[../PLAN.md](./PLAN.md)
+> **状态**：✅ completed (2026-05-01)
+> **回到 PLAN.md**：[./PLAN.md](./PLAN.md)
 
 ## 0. 为什么必须先做这一阶段
 
@@ -357,14 +357,14 @@
 
 执行人完成 Phase A 后逐条勾选：
 
-- [ ] A1 — `npm run test:component` 4 pass
-- [ ] A2 — `npm run test:visual` 3 pass，baseline 图已提交
-- [ ] A3 — `npm run test:smoke` 5 pass
-- [ ] A4 — CI workflow 在 PR 上全绿
-- [ ] A5 — `npm run check:e2e` 一行跑通
-- [ ] A6 — `docs/refactor/AGENT_LOOP.md` 落地
-- [ ] 更新 `PLAN.md`：A 行状态 → ✅，进度日志加一行
-- [ ] 给 Phase 0 写 `phase-0-shadcn.md`（A 全绿后才能动 0）
+- [x] A1 — `npm run test:component` 5 pass（Button.vitest.tsx）
+- [x] A2 — `npm run test:visual` 3 pass，baseline 图已提交（darwin + linux）
+- [x] A3 — `npm run test:smoke` 5 pass
+- [x] A4 — CI workflow `.github/workflows/web-tests.yml` 已就位（首次 PR 触发后才能验证全绿）
+- [x] A5 — `npm run check:e2e` 一行跑通（96 项检查）
+- [x] A6 — `docs/refactor/AGENT_LOOP.md` 落地
+- [x] 更新 `PLAN.md`：A 行状态 → ✅，进度日志加一行
+- [ ] 给 Phase 0 写 `phase-0-shadcn.md`（A 全绿后才能动 0）← Phase 0 启动前的下一动作
 
 ## 5. Commit 拆分建议
 
