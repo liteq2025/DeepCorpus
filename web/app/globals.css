@@ -65,6 +65,50 @@
    *  ⑤ Simplicity > decoration
    *      When in doubt: remove. A `border` you can delete is a `border`
    *      you should delete. Same with `shadow-*` on data surfaces.
+   *
+   *  ⑥ Typography canonical scale (NEW code follows this; legacy is
+   *     swept in Phase 3)
+   *
+   *      Sizes (use the named class, never `text-[Npx]` in new code):
+   *        text-2xs    11px   captions / metadata / tiny labels
+   *        text-xs     12px   small UI / chips / status pills
+   *        text-sm     14px   ⭐ default body, most chat / panel text
+   *        text-base   16px   reading-priority body, doc content
+   *        text-lg     18px   sub-section heading
+   *        text-xl     20px   page secondary heading
+   *        text-2xl    24px   page primary heading
+   *        text-hero   36px   hero only (chat home, marketing)
+   *
+   *      Weights:
+   *        font-normal     body & long-form text
+   *        font-medium     emphasis, button labels, list-item titles
+   *        font-semibold   headings, section titles, action labels
+   *        font-bold       reserved for hero / strong call-out only
+   *
+   *      Families (no change): font-sans default, font-mono for code,
+   *      font-serif ONLY at hero h1 (rule ④).
+   *
+   *      Phase 3 codemod target — currently the codebase has 30 distinct
+   *      font sizes (24 of them arbitrary `text-[Npx]`). Goal: 9 named
+   *      sizes total. ESLint rule will eventually forbid `text-\[\d+px\]`
+   *      to lock this in.
+   *
+   *  ⑦ Semantic colors (NEW code follows this; legacy is swept in Phase 3)
+   *
+   *      Body text:
+   *        text-foreground            primary
+   *        text-muted-foreground      secondary
+   *        text-muted-foreground/40   subtle / hint
+   *        text-muted-foreground/60   helper text
+   *        text-destructive           destructive action / error text
+   *
+   *      Status-conveying text uses tokens, NOT raw Tailwind palette
+   *      shades (Phase 3 will add `--success`, `--warning`, `--info`
+   *      tokens). Until then, components MAY use `text-emerald-{N}` /
+   *      `text-amber-{N}` / `text-sky-{N}` for status, but new code
+   *      should expect them to be replaced.
+   *
+   *      Currently the codebase has 98 distinct text colors. Goal: ≤ 12.
    */
   :root {
     color-scheme: light;

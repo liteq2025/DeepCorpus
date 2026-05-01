@@ -12,6 +12,15 @@ module.exports = {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
         serif: ["var(--font-serif)", "Georgia", "serif"],
       },
+      // Canonical typography scale — see globals.css preamble §⑥.
+      // Legacy Tailwind defaults (xs/sm/base/lg/xl/2xl) are kept
+      // unchanged so existing usage doesn't shift; we ADD endpoints
+      // (2xs, hero) that the codebase needed but had to reach for via
+      // arbitrary `text-[Npx]`.
+      fontSize: {
+        "2xs": ["0.6875rem", { lineHeight: "1.5" }], // 11px
+        hero: ["2.25rem", { lineHeight: "1.2" }], // 36px
+      },
       colors: {
         border: "var(--border)",
         input: "var(--input)",
