@@ -78,6 +78,8 @@ pnpm dlx shadcn@latest init --preset b37bl1flo --template next
 
 ## 6. 给执行者（agent / 人）的纪律
 
+详细 SOP 见 [AGENT_LOOP.md](./AGENT_LOOP.md)。摘要：
+
 1. **一次只推进一个阶段**，前一个阶段没全绿不开下一个。
 2. **每完成一项 = 一个 commit**，前缀按 `AGENTS.fork.md` 规范（`[FORK-FEAT]` / `[FORK-MOD]` / `[FORK-FIX]`）。
 3. **改完跑 `npm run check`**（Phase A 完成后），不通过不提交。
