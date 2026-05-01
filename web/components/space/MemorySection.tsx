@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { useAppShell } from "@/context/AppShellContext";
 import { apiUrl } from "@/lib/api";
 import SpaceSectionHeader from "@/components/space/SpaceSectionHeader";
+import { useConfirm } from "@/components/layout";
 
 const MarkdownRenderer = dynamic(
   () => import("@/components/common/MarkdownRenderer"),
@@ -89,6 +90,8 @@ async function readMemoryResponse(res: Response): Promise<MemoryApiData> {
 
 export default function MemorySection() {
   const { t } = useTranslation();
+  const confirm = useConfirm();
+
   const { activeSessionId, language } = useAppShell();
   const [data, setData] = useState<MemoryData>(EMPTY);
   const [loading, setLoading] = useState(true);
@@ -179,7 +182,7 @@ export default function MemorySection() {
   }, [activeSessionId, language, t]);
 
   const clearMemory = useCallback(async () => {
-    if (!window.confirm(t("Clear {{label}}?", { label: t(tab.label) }))) return;
+    if (!(await confirm({ title: t("Clear {{label}}?", { label: t(tab.label) }), destructive: true }))) return;
     setClearing(true);
     try {
       const res = await fetch(apiUrl("/api/v1/memory/clear"), {

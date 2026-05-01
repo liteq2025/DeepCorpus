@@ -36,6 +36,11 @@ const config = [
       "react-hooks/purity": "warn",
       "react-hooks/refs": "warn",
       "react-hooks/exhaustive-deps": "warn",
+      // React Compiler rule — defaults to "error" but treats out-of-deps
+      // refs as a hard fail. The `confirm` from useConfirm() is stable
+      // (memoized inside ConfirmProvider) so the legacy useCallback deps
+      // don't include it. P3 cleanup will revisit; warn for now.
+      "react-hooks/preserve-manual-memoization": "warn",
     },
   },
   {

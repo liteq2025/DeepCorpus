@@ -11,6 +11,7 @@ import KnowledgeBaseList, {
 } from "./KnowledgeBaseList";
 import KnowledgeBaseDetail from "./KnowledgeBaseDetail";
 import CreateKbModal from "./CreateKbModal";
+import { useConfirm } from "@/components/layout";
 
 /**
  * Phase 0.5.5 pilot — first route to compose the new layout primitives.
@@ -32,6 +33,8 @@ import CreateKbModal from "./CreateKbModal";
  */
 export default function KnowledgePage() {
   const { t } = useTranslation();
+  const confirm = useConfirm();
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialKb = searchParams.get("kb");
@@ -116,7 +119,7 @@ export default function KnowledgePage() {
 
   const handleDelete = useCallback(
     async (name: string) => {
-      if (!window.confirm(t('Delete knowledge base "{{name}}"?', { name }))) {
+      if (!(await confirm({ title: t('Delete knowledge base "{{name}}"?', { name }), destructive: true }))) {
         return;
       }
       try {

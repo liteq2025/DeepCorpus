@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { SidebarShell } from "@/components/sidebar/SidebarShell";
 import { useUnifiedChat } from "@/context/UnifiedChatContext";
+import { useConfirm } from "@/components/layout";
 import {
   deleteSession,
   listSessions,
@@ -14,6 +15,8 @@ import {
 
 export default function WorkspaceSidebar() {
   const { t } = useTranslation();
+  const confirm = useConfirm();
+
   const router = useRouter();
   const {
     newSession,
@@ -97,7 +100,7 @@ export default function WorkspaceSidebar() {
 
   const handleDeleteSession = useCallback(
     async (sessionId: string) => {
-      if (!window.confirm(t("Delete this chat history?"))) return;
+      if (!(await confirm({ title: t("Delete this chat history?"), destructive: true }))) return;
       await deleteSession(sessionId);
       setSessions((prev) =>
         prev.filter((session) => session.session_id !== sessionId),

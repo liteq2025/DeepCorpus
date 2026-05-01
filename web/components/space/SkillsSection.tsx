@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import SpaceSectionHeader from "@/components/space/SpaceSectionHeader";
+import { useConfirm } from "@/components/layout";
 import {
   createSkill,
   createSkillTag,
@@ -45,6 +46,8 @@ function normalizeTag(value: string): string {
 
 export default function SkillsSection() {
   const { t } = useTranslation();
+  const confirm = useConfirm();
+
 
   const [skills, setSkills] = useState<SkillInfo[]>([]);
   const [tagVocab, setTagVocab] = useState<string[]>([]);
@@ -204,7 +207,7 @@ export default function SkillsSection() {
 
   const handleDelete = useCallback(
     async (name: string) => {
-      if (!window.confirm(t('Delete skill "{{name}}"?', { name }))) return;
+      if (!(await confirm({ title: t('Delete skill "{{name}}"?', { name }), destructive: true }))) return;
       setDeleting(name);
       try {
         await deleteSkill(name);
@@ -294,7 +297,7 @@ export default function SkillsSection() {
 
   const handleDeleteTag = useCallback(
     async (tag: string) => {
-      if (!window.confirm(t('Delete tag "{{name}}"?', { name: tag }))) return;
+      if (!(await confirm({ title: t('Delete tag "{{name}}"?', { name: tag }), destructive: true }))) return;
       try {
         await deleteSkillTag(tag);
         if (filterTag === tag) setFilterTag("all");

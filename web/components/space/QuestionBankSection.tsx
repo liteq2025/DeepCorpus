@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import SpaceSectionHeader from "@/components/space/SpaceSectionHeader";
+import { useConfirm } from "@/components/layout";
 import {
   createCategory,
   deleteCategory,
@@ -47,6 +48,8 @@ const FILTERS: { mode: FilterMode; label: string }[] = [
 
 export default function QuestionBankSection() {
   const { t } = useTranslation();
+  const confirm = useConfirm();
+
   const [items, setItems] = useState<NotebookEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -121,7 +124,7 @@ export default function QuestionBankSection() {
 
   const handleDelete = useCallback(
     async (item: NotebookEntry) => {
-      if (!window.confirm(t("Delete this entry?"))) return;
+      if (!(await confirm({ title: t("Delete this entry?"), destructive: true }))) return;
       setPendingId(item.id);
       try {
         await deleteNotebookEntry(item.id);
@@ -175,7 +178,7 @@ export default function QuestionBankSection() {
 
   const handleDeleteCategory = useCallback(
     async (catId: number) => {
-      if (!window.confirm(t("Delete this category?"))) return;
+      if (!(await confirm({ title: t("Delete this category?"), destructive: true }))) return;
       try {
         await deleteCategory(catId);
         if (activeCategoryId === catId) setActiveCategoryId(null);

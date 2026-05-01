@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import dynamic from "next/dynamic";
 import { apiUrl } from "@/lib/api";
+import { useConfirm } from "@/components/layout";
 
 const MarkdownRenderer = dynamic(
   () => import("@/components/common/MarkdownRenderer"),
@@ -73,6 +74,8 @@ type BotFile = (typeof BOT_FILES)[number];
 export default function AgentsPage() {
   const router = useRouter();
   const { t } = useTranslation();
+  const confirm = useConfirm();
+
   const [bots, setBots] = useState<BotInfo[]>([]);
   const [souls, setSouls] = useState<SoulTemplate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -831,6 +834,7 @@ function BotsTab({
   router: ReturnType<typeof useRouter>;
 }) {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const [showCreate, setShowCreate] = useState(false);
   const [creating, setCreating] = useState(false);
 
@@ -943,12 +947,13 @@ function BotsTab({
   const destroyBot = useCallback(
     async (bid: string, name: string) => {
       if (
-        !window.confirm(
-          t('Permanently delete "{{name}}" ({{id}})? This cannot be undone.', {
-            name,
-            id: bid,
-          }),
-        )
+        !(await confirm({
+          title: t(
+            'Permanently delete "{{name}}" ({{id}})? This cannot be undone.',
+            { name, id: bid },
+          ),
+          destructive: true,
+        }))
       )
         return;
       const res = await fetch(apiUrl(`/api/v1/tutorbot/${bid}/destroy`), {
@@ -1763,6 +1768,7 @@ function SoulsTab({
   onToast: (msg: string) => void;
 }) {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const [editing, setEditing] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1842,8 +1848,7 @@ function SoulsTab({
 
   const deleteSoul = useCallback(
     async (soul: SoulTemplate) => {
-      if (!window.confirm(t('Delete soul "{{name}}"?', { name: soul.name })))
-        return;
+      if (!(await confirm({ title: t('Delete soul "{{name}}"?', { name: soul.name }), destructive: true }))) return;
       const res = await fetch(apiUrl(`/api/v1/tutorbot/souls/${soul.id}`), {
         method: "DELETE",
       });

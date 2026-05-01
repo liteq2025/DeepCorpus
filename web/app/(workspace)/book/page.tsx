@@ -37,6 +37,7 @@ import BookProgressTimeline from "./components/BookProgressTimeline";
 import BookSidebar from "./components/BookSidebar";
 import PageReader from "./components/PageReader";
 import SpineEditor from "./components/SpineEditor";
+import { useConfirm } from "@/components/layout";
 
 type View = "list" | "creator" | "spine" | "reader";
 
@@ -58,6 +59,7 @@ export default function BookPage() {
 }
 
 function BookPageInner() {
+  const confirm = useConfirm();
   const [books, setBooks] = useState<Book[]>([]);
   const [loadingBooks, setLoadingBooks] = useState(false);
   const [view, setView] = useState<View>("list");
@@ -206,7 +208,7 @@ function BookPageInner() {
   }, [requestedBookId, selectedBookId, handleSelectBook]);
 
   const handleDeleteBook = async (id: string) => {
-    if (!confirm("Delete this book? This cannot be undone.")) return;
+    if (!(await confirm({ title: "Delete this book? This cannot be undone.", destructive: true }))) return;
     await bookApi.delete(id);
     if (selectedBookId === id) {
       setSelectedBookId(null);
@@ -302,7 +304,7 @@ function BookPageInner() {
 
   const handleDeleteBlock = async (block: Block) => {
     if (!detail || !selectedPage) return;
-    if (!confirm(`Delete this ${block.type} block?`)) return;
+    if (!(await confirm({ title: `Delete this ${block.type} block?`, destructive: true }))) return;
     await bookApi.deleteBlock(detail.book.id, selectedPage.id, block.id);
     await loadBookDetail(detail.book.id);
   };

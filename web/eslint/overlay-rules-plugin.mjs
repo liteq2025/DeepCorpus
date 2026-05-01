@@ -119,6 +119,25 @@ export default {
         },
       },
       create(context) {
+        // Walk the resolution chain to find whether an identifier
+        // resolves to a real binding (local / parameter / module import)
+        // anywhere in the lexical scope. If yes, it's NOT a global —
+        // skip. If no, it's an unresolved reference, which (in a TS/RSC
+        // codebase with strict typing) means a global, like window.confirm.
+        function isUnresolvedGlobal(node, name) {
+          let scope = context.sourceCode.getScope(node);
+          while (scope) {
+            for (const variable of scope.variables) {
+              if (variable.name === name) return false;
+            }
+            for (const ref of scope.references) {
+              if (ref.identifier.name === name && ref.resolved) return false;
+            }
+            scope = scope.upper;
+          }
+          return true;
+        }
+
         return {
           CallExpression(node) {
             const callee = node.callee;
@@ -137,10 +156,14 @@ export default {
               });
               return;
             }
-            // bare confirm(…) / alert(…) / prompt(…) — globals
+            // Bare confirm/alert/prompt — only flag when it's the GLOBAL
+            // (i.e. no enclosing scope binds the name). Local bindings
+            // such as `const confirm = useConfirm()` are the recommended
+            // replacement and must NOT be flagged.
             if (
               callee.type === "Identifier" &&
-              FORBIDDEN_GLOBALS.has(callee.name)
+              FORBIDDEN_GLOBALS.has(callee.name) &&
+              isUnresolvedGlobal(callee, callee.name)
             ) {
               context.report({
                 node,

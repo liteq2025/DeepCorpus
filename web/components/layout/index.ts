@@ -23,3 +23,8 @@ export { EmptyState } from "./EmptyState";
 export { RouteFrame } from "./RouteFrame";
 export { ListPane } from "./ListPane";
 export { InspectorPanel } from "./InspectorPanel";
+export {
+  ConfirmProvider,
+  useConfirm,
+  type ConfirmOptions,
+} from "./ConfirmProvider";

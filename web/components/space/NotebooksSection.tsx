@@ -19,6 +19,7 @@ import {
   Trash2,
 } from "lucide-react";
 import SpaceSectionHeader from "@/components/space/SpaceSectionHeader";
+import { useConfirm } from "@/components/layout";
 import {
   createNotebook,
   deleteNotebook,
@@ -58,6 +59,8 @@ interface NotebookDetail extends NotebookInfo {
 
 export default function NotebooksSection() {
   const { t } = useTranslation();
+  const confirm = useConfirm();
+
   const router = useRouter();
 
   const [notebooks, setNotebooks] = useState<NotebookInfo[]>([]);
@@ -150,7 +153,7 @@ export default function NotebooksSection() {
   };
 
   const handleDelete = async (notebookId: string, name: string) => {
-    if (!window.confirm(t('Delete notebook "{{name}}"?', { name }))) return;
+    if (!(await confirm({ title: t('Delete notebook "{{name}}"?', { name }), destructive: true }))) return;
     await deleteNotebook(notebookId);
     if (selectedId === notebookId) {
       setSelectedId(null);
