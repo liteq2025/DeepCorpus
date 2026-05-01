@@ -64,6 +64,7 @@ pnpm dlx shadcn@latest init --preset b37bl1flo --template next
 
 | 日期 | 阶段 | 事件 |
 |---|---|---|
+| 2026-05-01 | 0.5 | ✅ 0.5.8 第三个 slice：`/agents` 迁 PageBody。toast/description swap 是独有 UX，保留 inline `<header>`（不用 PageHeader 原语）但用 canonical typography（text-2xl, text-sm）。`max-w-[960px] py-8` → PageBody default（max-w-5xl px-6 py-6）。0.5.8 进度 3/6（剩 /co-writer, /chat, /book）。 |
 | 2026-05-01 | 0.5 | ✅ 0.5.8 第二个 slice：`/playground` 迁 PageBody + PageHeader（commit `491e6d7`）。单列页面，不需要 RouteFrame；外层 `<div min-h-screen bg-[var(--background)]>` → `<section aria-label overflow-y-auto>`，title 用 PageHeader（font-bold → font-semibold per canonical scale）。0.5.8 进度 2/6（剩 /agents, /co-writer, /chat, /book）。 |
 | 2026-05-01 | 0.5 | ✅ 0.5.6 完成。7 个手撸 Modal 全部迁 Sheet，`common/Modal.tsx` 删除。两个 commit 拆分：(a) `2c4b0eb` CreateKbModal + SaveToNotebookModal + 删 common/Modal；(b) `7a75571` NotebookRecordPicker / HistorySessionPicker / QuestionBankPicker + FilePreviewDrawer 重命名 FilePreviewSheet。所有 showcase 同步、`npm run check:e2e` 112 项绿。 |
 | 2026-05-01 | 0 | ✅ Phase 0 完成。shadcn b37bl1flo init + 11 个原语 + Button 迁移到 shadcn API（保留 fork loading/icon 扩展）。Tailwind v3 兼容补丁：去掉 `@import "shadcn/tailwind.css"` / `tw-animate-css` / `outline-ring/50` v4 syntax，装 `tailwindcss-animate`。glass + snow 主题完全移除（globals.css -77 行）。`npm run check:e2e` 97 项检查绿。 |

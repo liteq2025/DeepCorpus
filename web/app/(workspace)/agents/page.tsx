@@ -22,7 +22,7 @@ import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import dynamic from "next/dynamic";
 import { apiUrl } from "@/lib/api";
-import { useConfirm } from "@/components/layout";
+import { PageBody, useConfirm } from "@/components/layout";
 
 const MarkdownRenderer = dynamic(
   () => import("@/components/common/MarkdownRenderer"),
@@ -113,23 +113,25 @@ export default function AgentsPage() {
   }, [loadBots, loadSouls]);
 
   return (
-    <div className="h-full overflow-y-auto [scrollbar-gutter:stable]">
-      <div className="mx-auto max-w-[960px] px-6 py-8">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-[24px] font-semibold tracking-tight text-[var(--foreground)]">
+    <section
+      aria-label={t("Agents content")}
+      className="h-full overflow-y-auto [scrollbar-gutter:stable]"
+    >
+      <PageBody size="default">
+        <header className="mb-6">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--foreground)]">
             {t("TutorBot Agents")}
           </h1>
           {toast ? (
-            <p className="mt-1 text-[13px] text-[var(--primary)] animate-fade-in">
+            <p className="mt-1 text-sm text-[var(--primary)] animate-fade-in">
               {toast}
             </p>
           ) : (
-            <p className="mt-1 text-[13px] text-[var(--muted-foreground)]">
+            <p className="mt-1 text-sm text-[var(--muted-foreground)]">
               {t("Manage your in-process TutorBot instances")}
             </p>
           )}
-        </div>
+        </header>
 
         {/* Tabs */}
         <div className="mb-6 flex items-center gap-1 border-b border-[var(--border)]/50 pb-3">
@@ -185,8 +187,8 @@ export default function AgentsPage() {
         ) : (
           <SoulsTab souls={souls} onReload={loadSouls} onToast={setToast} />
         )}
-      </div>
-    </div>
+      </PageBody>
+    </section>
   );
 }
 
