@@ -8,7 +8,6 @@ import {
   NotebookPen,
   Sparkles,
   User,
-  X,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { apiUrl } from "@/lib/api";
@@ -16,6 +15,15 @@ import {
   listNotebooks,
   type NotebookSummary as RealNotebookSummary,
 } from "@/lib/notebook-api";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 type RecordType =
   | "solve"
@@ -377,36 +385,33 @@ export default function SaveToNotebookModal({
     totalMessages > 0 && selectedMessageCount === totalMessages;
 
   return (
-    <div className="fixed inset-0 z-dialog flex items-center justify-center bg-[var(--background)]/65 p-4 backdrop-blur-md">
-      <div className="surface-card flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] text-[var(--card-foreground)] shadow-[0_22px_70px_rgba(0,0,0,0.18)]">
-        <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-5 py-4">
-          <div className="min-w-0">
-            <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--primary)]">
-              {t("Notebook Output")}
-            </div>
-            <h2 className="text-lg font-semibold text-[var(--foreground)]">
-              {t("Save to Notebook")}
-            </h2>
-            <p className="mt-0.5 text-sm text-[var(--muted-foreground)]">
-              {hasMessageSelection
-                ? t(
-                    "Choose which messages to include, pick one or more notebooks, and a summary will be generated automatically.",
-                  )
-                : t(
-                    "Select one or more notebooks. A summary will be generated automatically.",
-                  )}
-            </p>
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-0 sm:max-w-2xl"
+      >
+        <SheetHeader className="border-b border-[var(--border)] pb-4">
+          <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--primary)]">
+            {t("Notebook Output")}
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-2 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-            aria-label={t("Close")}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+          <SheetTitle className="text-lg">{t("Save to Notebook")}</SheetTitle>
+          <SheetDescription>
+            {hasMessageSelection
+              ? t(
+                  "Choose which messages to include, pick one or more notebooks, and a summary will be generated automatically.",
+                )
+              : t(
+                  "Select one or more notebooks. A summary will be generated automatically.",
+                )}
+          </SheetDescription>
+        </SheetHeader>
 
-        <div className="flex-1 space-y-5 overflow-y-auto bg-[var(--background)]/40 px-5 py-5">
+        <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
           <div>
             <label className="mb-2 block text-sm font-medium text-[var(--foreground)]">
               {t("Title")}
@@ -618,23 +623,20 @@ export default function SaveToNotebookModal({
           )}
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-[var(--border)] bg-[var(--card)] px-5 py-4">
-          <button
-            onClick={onClose}
-            className="rounded-xl px-4 py-2 text-sm text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-          >
+        <SheetFooter className="border-t border-[var(--border)] pt-3">
+          <Button variant="ghost" size="sm" onClick={onClose}>
             {t("Cancel")}
-          </button>
-          <button
+          </Button>
+          <Button
+            size="sm"
             onClick={handleSave}
             disabled={!canSave || isLoading}
-            className="btn-primary inline-flex items-center gap-2 rounded-xl bg-[var(--primary)] px-4 py-2 text-sm font-medium text-[var(--primary-foreground)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            loading={isLoading}
           >
-            {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             {t("Save")}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -15,7 +15,14 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import Modal from "@/components/common/Modal";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import ProcessLogs from "@/components/common/ProcessLogs";
 import RichCodeBlock from "@/components/common/RichCodeBlock";
 import ModelThinkingCard from "@/components/common/ModelThinkingCard";
@@ -326,24 +333,27 @@ function ModalPreview() {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button onClick={() => setOpen(true)}>打开 Modal</Button>
-      <Modal
-        isOpen={open}
-        onClose={() => setOpen(false)}
-        title="示例 Modal"
-        footer={
-          <Row>
+      <Button onClick={() => setOpen(true)}>打开 Sheet</Button>
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="right" className="sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>示例 Sheet</SheetTitle>
+            <SheetDescription>
+              这是 Sheet 的默认插槽内容，支持任意 JSX。Esc / 点击背景可关闭。
+            </SheetDescription>
+          </SheetHeader>
+          <div className="px-4 py-3 text-[14px] text-[var(--muted-foreground)]">
+            旧版 <code>common/Modal</code> 已迁移到 shadcn{" "}
+            <code>{"<Sheet>"}</code>（Phase 0.5.6）。
+          </div>
+          <SheetFooter>
             <Button variant="ghost" onClick={() => setOpen(false)}>
               取消
             </Button>
             <Button onClick={() => setOpen(false)}>确认</Button>
-          </Row>
-        }
-      >
-        <p className="text-[14px] text-[var(--muted-foreground)]">
-          这是 Modal 的默认插槽内容，支持任意 JSX。Esc / 点击背景可关闭。
-        </p>
-      </Modal>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }
@@ -1906,12 +1916,13 @@ export const SHOWCASES: Showcase[] = [
     Preview: ButtonPreview,
   },
   {
-    id: "common-modal",
-    category: "共享原语",
-    categoryCode: "common/",
-    name: "模态框",
-    code: "Modal",
-    description: "通用 Modal 容器，支持背景遮罩、Esc 关闭、自定义 footer。",
+    id: "ui-sheet",
+    category: "UI 原语",
+    categoryCode: "ui/",
+    name: "侧滑面板",
+    code: "Sheet",
+    description:
+      "默认 overlay — 表单、预览、浏览、设置 全用 Sheet。Phase 0.5.6 把旧版 `common/Modal` 迁来这里。",
     Preview: ModalPreview,
   },
   {
