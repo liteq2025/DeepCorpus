@@ -236,7 +236,7 @@ export const DEV_REGISTRY: RegistryGroup[] = [
         tags: [
           { cn: "Provider 目录", code: "Catalog", desc: "多 profile / 多 model 运行时切换" },
           { cn: "连通性测试", code: "Connection Test" },
-          "主题 light / dark / glass",
+          "主题 light / dark",
           "语言 中 / 英",
           "首次运行向导",
           "诊断工具",
@@ -753,18 +753,21 @@ export const DEV_REGISTRY: RegistryGroup[] = [
       {
         id: "fs-design",
         label: "设计系统",
-        desc: "Tailwind + CSS variables，3 主题，10 个核心 token",
+        desc: "Tailwind + shadcn b37bl1flo + CSS variables，2 主题，~20 个核心 token",
         tags: [
           { cn: "亮色", code: "theme: light", desc: "默认" },
           { cn: "暗色", code: "theme: dark" },
-          { cn: "玻璃态", code: "theme: glass" },
           { cn: "背景", code: "--background" },
           { cn: "前景", code: "--foreground" },
           { cn: "主色", code: "--primary" },
           { cn: "次色", code: "--secondary" },
           { cn: "卡片", code: "--card" },
+          { cn: "弹层", code: "--popover" },
+          { cn: "侧边栏", code: "--sidebar" },
           { cn: "边框", code: "--border" },
           { cn: "弱文本", code: "--muted-foreground" },
+          { cn: "圆角基准", code: "--radius" },
+          { cn: "图表 5 色", code: "--chart-1..5" },
         ],
       },
       {

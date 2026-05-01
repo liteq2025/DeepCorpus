@@ -72,7 +72,7 @@ type Catalog = {
 };
 
 type UiSettings = {
-  theme: "light" | "dark" | "glass" | "snow";
+  theme: "light" | "dark";
   language: "en" | "zh";
 };
 
@@ -532,9 +532,7 @@ function SettingsPageContent() {
   const { t } = useTranslation();
 
   const [status, setStatus] = useState<SystemStatus | null>(null);
-  const [theme, setTheme] = useState<"light" | "dark" | "glass" | "snow">(
-    "light",
-  );
+  const [theme, setTheme] = useState<"light" | "dark">("light");
   const [language, setLanguage] = useState<"en" | "zh">("en");
   const [catalog, setCatalog] = useState<Catalog>(defaultCatalog());
   const [draft, setDraft] = useState<Catalog>(defaultCatalog());
@@ -636,7 +634,7 @@ function SettingsPageContent() {
   // -- UI preference helpers ----------------------------------------------
 
   const persistUi = async (
-    nextTheme: "light" | "dark" | "glass" | "snow",
+    nextTheme: "light" | "dark",
     nextLanguage: "en" | "zh",
   ) => {
     await fetch(apiUrl("/api/v1/settings/ui"), {
@@ -646,9 +644,7 @@ function SettingsPageContent() {
     });
   };
 
-  const updateTheme = async (
-    nextTheme: "light" | "dark" | "glass" | "snow",
-  ) => {
+  const updateTheme = async (nextTheme: "light" | "dark") => {
     setTheme(nextTheme);
     applyThemePreference(nextTheme);
     await persistUi(nextTheme, language);
@@ -1012,7 +1008,7 @@ function SettingsPageContent() {
               {t("Theme")}
             </span>
             <div className="flex gap-0.5 rounded-lg bg-[var(--muted)] p-0.5">
-              {(["snow", "light", "dark", "glass"] as const).map((v) => (
+              {(["light", "dark"] as const).map((v) => (
                 <button
                   key={v}
                   onClick={() => updateTheme(v)}
@@ -1022,13 +1018,7 @@ function SettingsPageContent() {
                       : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
                   }`}
                 >
-                  {v === "snow"
-                    ? t("Snow")
-                    : v === "light"
-                      ? t("Light")
-                      : v === "dark"
-                        ? t("Dark")
-                        : t("Glass")}
+                  {v === "light" ? t("Light") : t("Dark")}
                 </button>
               ))}
             </div>

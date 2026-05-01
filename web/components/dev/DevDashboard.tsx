@@ -388,7 +388,7 @@ const COMPONENT_TREE = `web/                                              整个
     ├── skills-api.ts                             Skills CRUD
     ├── stream.ts                                 SSE 流解析
     ├── theme-utils.ts                            主题工具
-    ├── theme.ts                                  light/dark/glass token 表
+    ├── theme.ts                                  light/dark token 表
     ├── think-segments.ts                         <think>...</think> 解析器
     ├── unified-ws.ts                             ⭐ 统一 WS 客户端（chat / sessions / turns）
     ├── version.ts                                build tag 解析

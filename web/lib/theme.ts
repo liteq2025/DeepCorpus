@@ -3,7 +3,7 @@
  * Handles light/dark theme with localStorage fallback and system preference detection
  */
 
-export type Theme = "light" | "dark" | "glass" | "snow";
+export type Theme = "light" | "dark";
 
 export const THEME_STORAGE_KEY = "deeptutor-theme";
 
@@ -35,14 +35,11 @@ export function getStoredTheme(): Theme | null {
 
   try {
     const stored = localStorage.getItem(THEME_STORAGE_KEY);
-    if (
-      stored === "light" ||
-      stored === "dark" ||
-      stored === "glass" ||
-      stored === "snow"
-    ) {
+    if (stored === "light" || stored === "dark") {
       return stored;
     }
+    // Legacy values "glass" / "snow" — fall through, let initializeTheme
+    // overwrite with system preference. Phase 0.2 dropped glass + snow.
   } catch (e) {
     // Silently fail - localStorage may be disabled
   }
@@ -84,14 +81,12 @@ export function applyThemeToDocument(theme: Theme): void {
 
   const html = document.documentElement;
 
+  // Also strip legacy `theme-glass` / `theme-snow` classes that may linger on
+  // the html element from older sessions; Phase 0.2 removed those themes.
   html.classList.remove("dark", "theme-glass", "theme-snow");
 
   if (theme === "dark") {
     html.classList.add("dark");
-  } else if (theme === "glass") {
-    html.classList.add("dark", "theme-glass");
-  } else if (theme === "snow") {
-    html.classList.add("theme-snow");
   }
 }
 

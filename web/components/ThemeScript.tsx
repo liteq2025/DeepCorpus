@@ -8,6 +8,9 @@
  * hydration.
  */
 export default function ThemeScript() {
+  // Phase 0.2 dropped glass + snow themes; only light + dark remain. The
+  // legacy class strip below tolerates old localStorage values surviving an
+  // upgrade — anything other than "dark" lands as light.
   const themeScript = `
     (function() {
       try {
@@ -17,13 +20,10 @@ export default function ThemeScript() {
 
         if (stored === 'dark') {
           document.documentElement.classList.add('dark');
-        } else if (stored === 'glass') {
-          document.documentElement.classList.add('dark', 'theme-glass');
-        } else if (stored === 'snow') {
-          document.documentElement.classList.add('theme-snow');
         } else if (stored === 'light') {
           // already clean
         } else {
+          // Unknown / legacy value (glass / snow / null): system preference.
           if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.documentElement.classList.add('dark');
             localStorage.setItem('deeptutor-theme', 'dark');
