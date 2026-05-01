@@ -10,6 +10,7 @@ import ast
 import asyncio
 from dataclasses import dataclass, field
 from datetime import datetime
+import functools
 import os
 from pathlib import Path
 import subprocess
@@ -54,7 +55,7 @@ DISALLOWED_CALL_NAMES = {
     "input",
     "breakpoint",
 }
-DISALLOWED_ATTRIBUTE_BASES = {
+DEFAULT_DISALLOWED_ATTRIBUTE_BASES = {
     "os",
     "sys",
     "subprocess",
@@ -64,6 +65,12 @@ DISALLOWED_ATTRIBUTE_BASES = {
     "importlib",
     "builtins",
 }
+# Kept as a module-level alias for backward compatibility with importers.
+DISALLOWED_ATTRIBUTE_BASES = DEFAULT_DISALLOWED_ATTRIBUTE_BASES
+# Modules explicitly called out in the codegen prompt as forbidden, even when
+# the actual deny is enforced by absence from the allow-list.  Listing them
+# helps the LLM avoid generating code that will be rejected after the fact.
+NETWORK_DENY_HINTS = ("urllib", "requests", "http", "httpx", "socket", "ftplib")
 
 logger = get_logger("CodeExecutor")
 
@@ -71,15 +78,80 @@ logger = get_logger("CodeExecutor")
 _META_FILES = frozenset({"code.py", "output.log", ".gitkeep"})
 
 
+@functools.lru_cache(maxsize=1)
 def _load_config() -> dict[str, Any]:
-    """Load run_code configuration from main.yaml."""
-    from deeptutor.services.config import load_config_with_main
+    """Load run_code configuration from main.yaml. Cached for the process lifetime.
 
-    config = load_config_with_main("main.yaml", PROJECT_ROOT)
-    run_code_config = config.get("tools", {}).get("run_code", {})
+    Returns an empty dict if main.yaml is missing or unreadable so that callers
+    can fall back to built-in defaults instead of crashing.
+    """
+    try:
+        from deeptutor.services.config import load_config_with_main
+
+        config = load_config_with_main("main.yaml", PROJECT_ROOT)
+    except FileNotFoundError:
+        logger.debug("main.yaml not found; run_code falls back to built-in defaults")
+        return {}
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.warning(f"Failed to load main.yaml for run_code: {exc}")
+        return {}
+    run_code_config = config.get("tools", {}).get("run_code", {}) or {}
     if run_code_config:
         logger.debug("Loaded run_code config from main.yaml")
     return run_code_config
+
+
+def _resolve_imports_policy() -> tuple[list[str], set[str]]:
+    """Resolve (allowed_imports, disallowed_attribute_bases) from yaml or defaults.
+
+    yaml fields under ``tools.run_code``:
+      - ``allowed_imports``: list[str]
+      - ``disallowed_attribute_bases``: list[str]
+    Either field may be omitted; missing fields fall back to the built-in defaults.
+    """
+    cfg = _load_config()
+    allowed_raw = cfg.get("allowed_imports")
+    if isinstance(allowed_raw, list) and allowed_raw:
+        allowed = [str(x) for x in allowed_raw]
+    else:
+        allowed = list(DEFAULT_SAFE_IMPORTS)
+
+    deny_raw = cfg.get("disallowed_attribute_bases")
+    if isinstance(deny_raw, list) and deny_raw:
+        disallowed_bases = {str(x) for x in deny_raw}
+    else:
+        disallowed_bases = set(DEFAULT_DISALLOWED_ATTRIBUTE_BASES)
+    return allowed, disallowed_bases
+
+
+def build_codegen_prompt(allowed_imports: list[str] | None = None) -> str:
+    """Construct the system prompt used by code-execution tools.
+
+    The prompt is generated from the live import policy so the LLM always sees
+    the same allow-list that will be enforced at runtime.  Out-of-policy imports
+    (notably network modules) are explicitly forbidden so the model does not
+    waste turns proposing code that will be rejected.
+    """
+    if allowed_imports is None:
+        allowed_imports, _ = _resolve_imports_policy()
+    allowed_str = ", ".join(allowed_imports) if allowed_imports else "(none)"
+    network_str = ", ".join(NETWORK_DENY_HINTS)
+    return (
+        "You are a Python code generator.\n"
+        "Convert the user's natural-language request into executable Python "
+        "code only.\n"
+        "Rules:\n"
+        "- Output only Python code, with no markdown fences or explanation.\n"
+        f"- Available imports: {allowed_str}. Do NOT import anything else.\n"
+        "- This sandbox has NO network access. Do not import any of: "
+        f"{network_str}, and do not attempt HTTP/RPC calls of any kind.\n"
+        "- Do not access attributes of os, sys, subprocess, socket, pathlib, "
+        "shutil, importlib, or builtins.\n"
+        "- Print the final answer to stdout.\n"
+        "- Save plots or generated files to the current working directory.\n"
+        "- Keep the code focused on the requested computation or "
+        "verification task."
+    )
 
 
 def _save_output_log(
@@ -181,11 +253,20 @@ class ImportGuard:
     """Parse AST, restrict import modules."""
 
     @staticmethod
-    def validate(code: str, allowed_imports: list[str] | None):
+    def validate(
+        code: str,
+        allowed_imports: list[str] | None,
+        disallowed_attribute_bases: set[str] | None = None,
+    ):
         if not allowed_imports:
             return
 
         allowed = set(allowed_imports)
+        deny_bases = (
+            disallowed_attribute_bases
+            if disallowed_attribute_bases is not None
+            else DEFAULT_DISALLOWED_ATTRIBUTE_BASES
+        )
         try:
             tree = ast.parse(code)
         except SyntaxError as exc:
@@ -215,7 +296,7 @@ class ImportGuard:
                 if (
                     isinstance(node.func, ast.Attribute)
                     and isinstance(node.func.value, ast.Name)
-                    and node.func.value.id in DISALLOWED_ATTRIBUTE_BASES
+                    and node.func.value.id in deny_bases
                 ):
                     raise CodeExecutionError(
                         f"Use of unsafe module access is not allowed: "
@@ -323,8 +404,10 @@ async def run_code(
 
     try:
         if allowed_imports is None:
-            allowed_imports = DEFAULT_SAFE_IMPORTS
-        ImportGuard.validate(code, allowed_imports)
+            allowed_imports, disallowed_bases = _resolve_imports_policy()
+        else:
+            _, disallowed_bases = _resolve_imports_policy()
+        ImportGuard.validate(code, allowed_imports, disallowed_bases)
 
         loop = asyncio.get_running_loop()
 

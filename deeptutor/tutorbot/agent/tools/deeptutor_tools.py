@@ -85,16 +85,6 @@ class RAGAdapterTool(Tool):
 
 
 class CodeExecutionAdapterTool(Tool):
-    _CODEGEN_SYSTEM_PROMPT = (
-        "You are a Python code generator.\n"
-        "Convert the user's natural-language request into executable Python code only.\n"
-        "Rules:\n"
-        "- Output only Python code, with no markdown fences or explanation.\n"
-        "- Prefer standard library plus common packages: math, numpy, pandas, matplotlib, scipy, sympy.\n"
-        "- Print the final answer to stdout.\n"
-        "- Keep the code focused on the requested computation."
-    )
-
     @property
     def name(self) -> str:
         return "code_execution"
@@ -161,9 +151,11 @@ class CodeExecutionAdapterTool(Tool):
         if cfg.model:
             extra.update(get_token_limit_kwargs(cfg.model, 1200))
 
+        from deeptutor.tools.code_executor import build_codegen_prompt
+
         response = await complete(
             prompt=intent,
-            system_prompt=self._CODEGEN_SYSTEM_PROMPT,
+            system_prompt=build_codegen_prompt(),
             model=cfg.model,
             api_key=cfg.api_key,
             base_url=cfg.base_url,

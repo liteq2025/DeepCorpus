@@ -141,18 +141,6 @@ class WebSearchTool(_PromptHintsMixin, BaseTool):
 
 
 class CodeExecutionTool(_PromptHintsMixin, BaseTool):
-    _CODEGEN_SYSTEM_PROMPT = """You are a Python code generator.
-
-Convert the user's natural-language request into executable Python code only.
-
-Rules:
-- Output only Python code, with no markdown fences or explanation.
-- Prefer standard library plus these common packages when useful: math, numpy, pandas, matplotlib, scipy, sympy.
-- Print the final answer to stdout.
-- Save plots or generated files to the current working directory.
-- Keep the code focused on the requested computation or verification task.
-"""
-
     def get_definition(self) -> ToolDefinition:
         return ToolDefinition(
             name="code_execution",
@@ -239,9 +227,11 @@ Rules:
         if getattr(llm_config, "model", None):
             completion_kwargs.update(get_token_limit_kwargs(llm_config.model, 1200))
 
+        from deeptutor.tools.code_executor import build_codegen_prompt
+
         response = await complete(
             prompt=intent,
-            system_prompt=self._CODEGEN_SYSTEM_PROMPT,
+            system_prompt=build_codegen_prompt(),
             model=llm_config.model,
             api_key=llm_config.api_key,
             base_url=llm_config.base_url,
