@@ -27,27 +27,44 @@
    *     not stark contrast).
    */
   /*
-   * Iteration 2 design rules (locked in until next iteration):
+   * Visual design rules (iteration 3, locked in until next iteration).
+   * These are followed by every component that consumes these tokens —
+   * if a future commit adds visual noise, the reviewer should push back.
    *
-   *  ① Color cast is intentionally faint. Chroma stays ≤ 0.004 in light
-   *    mode and ≤ 0.002 in dark — the eye reads "near-neutral with a hint
-   *    of warmth" rather than "warm cream". Hierarchy comes from lightness
-   *    ladder, NOT from hue shifts.
+   *  ① Color cast intentionally faint
+   *      Chroma stays ≤ 0.003 in light mode and ≤ 0.002 in dark.
+   *      Hierarchy is carried by lightness ladder, NOT by hue shifts.
    *
-   *  ② Borders are vestigial. `--border` is set so faint that nested
-   *    borders won't pile up visually. Components SHOULD prefer:
-   *      a. spacing (margin / padding)
-   *      b. background lightness step
-   *      c. soft shadow
-   *      d. ONE border (only the outermost container)
-   *    Only fall back to a border when (a)–(c) genuinely don't work.
+   *  ② Borders only when functional
+   *      Borders have two tiers and may not be used as decoration:
    *
-   *  ③ Single-border principle: do NOT nest a bordered region inside
-   *    another bordered region. If you find yourself doing it, you're
-   *    creating box-in-box; refactor to a single border + interior bg
-   *    shift.
+   *      A. STRUCTURAL (border IS the affordance)
+   *         e.g. `<input>`, large interactive cards, the *outer* wrapper
+   *         of a self-contained widget. Use `border border-[var(--border)]`.
    *
-   *  ④ Simplicity > decoration. Remove visual noise before adding any.
+   *      B. SECTION DIVIDERS (only inside data-dense surfaces)
+   *         e.g. table row separators, nav item dividers. Use a single
+   *         `border-t` per row; never combine with an outer wrapper border.
+   *
+   *      Anything decorative or "just to make the section look distinct" —
+   *      do NOT add a border. Use spacing or a background lightness step
+   *      instead. The eye reads `面/surface`, not lines.
+   *
+   *  ③ Single-border principle
+   *      A bordered container MUST NOT contain another bordered container.
+   *      If you find yourself doing this, refactor: keep border on the
+   *      outer wrapper and use a background step for inner sections, or
+   *      vice versa.
+   *
+   *  ④ Serif font discipline (`font-serif` / Lora)
+   *      Reserved for ONE pattern: large hero titles in special contexts
+   *      (the chat home `What would you like to learn?` h1). Body text,
+   *      lists, table rows, code blocks — all `font-sans` (Plus Jakarta).
+   *      The serif is character, not default.
+   *
+   *  ⑤ Simplicity > decoration
+   *      When in doubt: remove. A `border` you can delete is a `border`
+   *      you should delete. Same with `shadow-*` on data surfaces.
    */
   :root {
     color-scheme: light;

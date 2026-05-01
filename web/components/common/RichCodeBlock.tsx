@@ -16,13 +16,20 @@ const PLAIN_LANGS = new Set(["", "text", "txt", "plain", "plaintext", "none"]);
  * Subtle code-block surfaces — code should feel embedded in the page, not
  * bolted on. Light mode: a small step down from the page; dark mode: a
  * small step up. Either way, no harsh contrast.
+ *
+ * Iteration 3: language-tag header now sits on a lightness-shifted band
+ * (HEADER_BG_*) instead of using a border — separation by 面/surface only.
  */
-const SURFACE_LIGHT = "oklch(0.94 0.012 75)";
-const SURFACE_DARK = "oklch(0.205 0.006 60)";
-const HEADER_FG_LIGHT = "oklch(0.50 0.012 60)";
-const HEADER_FG_DARK = "oklch(0.65 0.008 65)";
-const PLAIN_FG_LIGHT = "oklch(0.25 0.008 50)";
-const PLAIN_FG_DARK = "oklch(0.92 0.006 75)";
+const SURFACE_LIGHT = "oklch(0.95 0.003 75)";
+const SURFACE_DARK = "oklch(0.205 0.002 60)";
+const HEADER_BG_LIGHT = "oklch(0.92 0.003 75)";
+const HEADER_BG_DARK = "oklch(0.225 0.002 60)";
+const HEADER_FG_LIGHT = "oklch(0.45 0.005 60)";
+const HEADER_FG_DARK = "oklch(0.65 0.003 65)";
+const PLAIN_FG_LIGHT = "oklch(0.25 0.005 50)";
+const PLAIN_FG_DARK = "oklch(0.92 0.003 75)";
+const LINE_NUMBER_FG_LIGHT = "oklch(0.70 0.005 60)";
+const LINE_NUMBER_FG_DARK = "oklch(0.45 0.003 60)";
 
 /**
  * Track whether the document currently has the `dark` class on <html>.
@@ -63,8 +70,10 @@ export default function RichCodeBlock({
   const isDark = useIsDark();
 
   const surface = isDark ? SURFACE_DARK : SURFACE_LIGHT;
+  const headerBg = isDark ? HEADER_BG_DARK : HEADER_BG_LIGHT;
   const headerFg = isDark ? HEADER_FG_DARK : HEADER_FG_LIGHT;
   const plainFg = isDark ? PLAIN_FG_DARK : PLAIN_FG_LIGHT;
+  const lineNumberFg = isDark ? LINE_NUMBER_FG_DARK : LINE_NUMBER_FG_LIGHT;
   const syntaxTheme = isDark ? oneDark : oneLight;
 
   return (
@@ -73,9 +82,11 @@ export default function RichCodeBlock({
       style={{ background: surface }}
     >
       {!isPlain ? (
+        // Iteration 3: header band uses a lightness-step background instead
+        // of a divider line — region separation by 面/surface, not edge.
         <div
-          className="border-b border-[var(--border)] px-3 py-2 text-[11px] font-medium uppercase tracking-wider"
-          style={{ color: headerFg }}
+          className="px-3 py-2 text-[11px] font-medium uppercase tracking-wider"
+          style={{ background: headerBg, color: headerFg }}
         >
           {normalizedLang}
         </div>
@@ -100,11 +111,20 @@ export default function RichCodeBlock({
           language={normalizedLang}
           style={syntaxTheme}
           PreTag="pre"
+          showLineNumbers
+          lineNumberStyle={{
+            minWidth: "2.25em",
+            paddingRight: "1em",
+            textAlign: "right",
+            color: lineNumberFg,
+            userSelect: "none",
+            opacity: 0.7,
+          }}
           customStyle={{
             margin: 0,
             borderRadius: 0,
             background: surface,
-            padding: "1rem",
+            padding: "1rem 1rem 1rem 0.75rem",
             fontSize: "0.875rem",
             lineHeight: "1.7",
           }}

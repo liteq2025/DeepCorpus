@@ -381,16 +381,13 @@ export default function RichMarkdownRenderer({
     p: ({ node, ...props }: any) => <p {...lineAttr(node)} {...props} />,
     ul: ({ node, ...props }: any) => <ul {...lineAttr(node)} {...props} />,
     ol: ({ node, ...props }: any) => <ol {...lineAttr(node)} {...props} />,
+    // Iteration 3 — table aesthetics: wrapper has no border + no shadow
+    // (those felt detached from the rest of the design language); structure
+    // carried by row dividers + thead bg lightness step alone.
     table: ({ node, children, ...props }: any) =>
       hasRenderableChildren(children) ? (
-        <div
-          className={`overflow-x-auto rounded-lg border border-[var(--border)] shadow-sm ${gap}`}
-          {...lineAttr(node)}
-        >
-          <table
-            className="min-w-full divide-y divide-[var(--border)] text-sm"
-            {...props}
-          >
+        <div className={`overflow-x-auto ${gap}`} {...lineAttr(node)}>
+          <table className="min-w-full text-sm" {...props}>
             {children}
           </table>
         </div>
@@ -400,19 +397,19 @@ export default function RichMarkdownRenderer({
     ),
     th: ({ node, ...props }: any) => (
       <th
-        className={`border-b border-[var(--border)] text-left font-semibold text-[var(--foreground)] ${cellPad}`}
+        className={`text-left font-semibold text-[var(--foreground)] ${cellPad}`}
         {...props}
       />
     ),
     tbody: ({ node, ...props }: any) => (
       <tbody
-        className="divide-y divide-[var(--border)] bg-[var(--card)]"
+        className="divide-y divide-[var(--border)]"
         {...props}
       />
     ),
     td: ({ node, ...props }: any) => (
       <td
-        className={`border-b border-[var(--border)] text-[var(--muted-foreground)] ${cellPad}`}
+        className={`text-[var(--muted-foreground)] ${cellPad}`}
         {...props}
       />
     ),
@@ -615,11 +612,15 @@ export default function RichMarkdownRenderer({
     [isTrace, variant, enableMermaid, enableCode, trackSourceLines],
   );
 
+  // Iteration 3: serif font is reserved for hero/special titles only
+  // (e.g. chat home "What would you like to learn?"). Markdown body uses
+  // sans for legibility — body serif felt mismatched with the rest of the
+  // app's modern UI typography.
   const rootClasses = isTrace
     ? "md-renderer max-w-none font-sans text-[11px] leading-[1.55] text-[var(--muted-foreground)]"
     : variant === "prose"
-      ? "md-renderer prose max-w-none font-serif"
-      : "md-renderer prose prose-sm max-w-none font-serif";
+      ? "md-renderer prose max-w-none"
+      : "md-renderer prose prose-sm max-w-none";
 
   const remarkPlugins = useMemo(() => {
     const p: Array<any> = [remarkGfm];

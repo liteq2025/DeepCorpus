@@ -467,11 +467,13 @@ export default function SimpleMarkdownRenderer({
 
   const remarkPlugins = useMemo(() => [remarkGfm], []);
 
+  // Iteration 3: see RichMarkdownRenderer note — body serif removed,
+  // serif reserved for hero titles only.
   const rootClasses = isTrace
     ? "md-renderer max-w-none font-sans text-[11px] leading-[1.55] text-[var(--muted-foreground)]"
     : variant === "prose"
-      ? "md-renderer prose max-w-none font-serif"
-      : "md-renderer prose prose-sm max-w-none font-serif";
+      ? "md-renderer prose max-w-none"
+      : "md-renderer prose prose-sm max-w-none";
 
   return (
     <div className={`${rootClasses} ${className}`}>
