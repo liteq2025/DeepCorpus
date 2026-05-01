@@ -250,7 +250,7 @@ const COMPONENT_TREE = `web/                                              整个
 │   │   │   ├── TracePanels.tsx                   工具调用追踪面板
 │   │   │   └── composer-field.tsx                内部小组件（Field/CollapsibleSection）
 │   │   └── preview/                              9
-│   │       ├── FilePreviewDrawer.tsx             右侧滑出附件抽屉
+│   │       ├── FilePreviewSheet.tsx             右侧滑出附件抽屉
 │   │       ├── previewerFor.ts                   kind 路由表（按扩展名/MIME）
 │   │       └── previewers/                       8
 │   │           ├── FallbackPreview.tsx           兜底（下载 CTA）

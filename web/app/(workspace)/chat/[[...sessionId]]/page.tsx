@@ -28,7 +28,7 @@ import { ChatMessageList } from "@/components/chat/home/ChatMessages";
 // Imported eagerly so the drawer shell is always mounted off-screen —
 // clicking a chip becomes a single CSS class flip, no chunk fetch + double
 // render. The heavy renderers inside still load lazily.
-import FilePreviewDrawer from "@/components/chat/preview/FilePreviewDrawer";
+import FilePreviewSheet from "@/components/chat/preview/FilePreviewSheet";
 import {
   useUnifiedChat,
   type MessageAttachment,
@@ -1274,7 +1274,7 @@ export default function ChatPage() {
         messages={chatSaveMessages}
         onClose={handleCloseSaveModal}
       />
-      <FilePreviewDrawer
+      <FilePreviewSheet
         open={previewSource !== null}
         source={previewSource}
         onClose={handleClosePreview}

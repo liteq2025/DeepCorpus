@@ -26,7 +26,7 @@ const FallbackPreview = dynamic(() => import("./previewers/FallbackPreview"));
 
 const ANIM_MS = 220;
 
-interface FilePreviewDrawerProps {
+interface FilePreviewSheetProps {
   open: boolean;
   source: FilePreviewSource | null;
   onClose: () => void;
@@ -48,11 +48,11 @@ interface FilePreviewDrawerProps {
  * • Renderers are lazy so opening a small image doesn't drag in markdown /
  *   syntax-highlight chunks.
  */
-export default function FilePreviewDrawer({
+export default function FilePreviewSheet({
   open,
   source,
   onClose,
-}: FilePreviewDrawerProps) {
+}: FilePreviewSheetProps) {
   const { t } = useTranslation();
 
   // Latch the most recently shown source so the body keeps rendering during

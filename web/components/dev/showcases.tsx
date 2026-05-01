@@ -61,7 +61,7 @@ import SvgPreview from "@/components/chat/preview/previewers/SvgPreview";
 import ImagePreview from "@/components/chat/preview/previewers/ImagePreview";
 import FallbackPreview from "@/components/chat/preview/previewers/FallbackPreview";
 import OfficeTextPreview from "@/components/chat/preview/previewers/OfficeTextPreview";
-import FilePreviewDrawer from "@/components/chat/preview/FilePreviewDrawer";
+import FilePreviewSheet from "@/components/chat/preview/FilePreviewSheet";
 import AtMentionPopup from "@/components/chat/AtMentionPopup";
 import { SimpleComposerInput } from "@/components/chat/home/SimpleComposerInput";
 import { CallTracePanel } from "@/components/chat/home/TracePanels";
@@ -1556,21 +1556,21 @@ function CreateKbModalPreview() {
 
 // ---------- chat preview drawer + extra previewers ----------
 
-function FilePreviewDrawerPreview() {
+function FilePreviewSheetPreview() {
   const [open, setOpen] = useState(false);
   return (
     <>
       <Button onClick={() => setOpen(true)} variant="secondary" size="sm">
         打开预览抽屉
       </Button>
-      <FilePreviewDrawer
+      <FilePreviewSheet
         open={open}
         source={{
           type: "image",
           url: DEMO_PNG_DATA_URL,
           filename: "demo.png",
           mimeType: "image/png",
-        } as unknown as Parameters<typeof FilePreviewDrawer>[0]["source"]}
+        } as unknown as Parameters<typeof FilePreviewSheet>[0]["source"]}
         onClose={() => setOpen(false)}
       />
     </>
@@ -2168,9 +2168,9 @@ export const SHOWCASES: Showcase[] = [
     category: "Chat 文件预览",
     categoryCode: "chat/preview/",
     name: "附件抽屉",
-    code: "FilePreviewDrawer",
+    code: "FilePreviewSheet",
     description: "右侧滑出的统一附件预览抽屉，按文件类型路由到不同 previewer。",
-    Preview: FilePreviewDrawerPreview,
+    Preview: FilePreviewSheetPreview,
   },
 
   // ---------- Chat 输入与提及 ----------

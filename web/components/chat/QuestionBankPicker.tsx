@@ -8,9 +8,17 @@ import {
   FolderOpen,
   Loader2,
   Search,
-  X,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 import {
   listCategories,
   listNotebookEntries,
@@ -131,31 +139,30 @@ export default function QuestionBankPicker({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-dialog flex items-center justify-center bg-[var(--background)]/65 p-4 backdrop-blur-md">
-      <div className="surface-card w-full max-w-4xl overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--card)] text-[var(--card-foreground)] shadow-[0_22px_70px_rgba(0,0,0,0.18)]">
-        <div className="flex items-start justify-between gap-3 border-b border-[var(--border)] px-5 py-4">
-          <div className="min-w-0">
-            <div className="mb-1 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--primary)]">
-              <ClipboardList className="h-3 w-3" />
-              {t("Question Bank Reference")}
-            </div>
-            <h2 className="text-lg font-semibold text-[var(--foreground)]">
-              {t("Select Question Bank Entries")}
-            </h2>
-            <p className="mt-0.5 text-sm text-[var(--muted-foreground)]">
-              {t("Choose quiz questions to ground the next request.")}
-            </p>
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-0 sm:max-w-3xl"
+      >
+        <SheetHeader className="border-b border-[var(--border)] pb-4">
+          <div className="mb-1 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[var(--primary)]">
+            <ClipboardList className="h-3 w-3" aria-hidden="true" />
+            {t("Question Bank Reference")}
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-2 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-            aria-label={t("Close")}
-          >
-            <X size={18} />
-          </button>
-        </div>
+          <SheetTitle className="text-lg">
+            {t("Select Question Bank Entries")}
+          </SheetTitle>
+          <SheetDescription>
+            {t("Choose quiz questions to ground the next request.")}
+          </SheetDescription>
+        </SheetHeader>
 
-        <div className="bg-[var(--background)]/40 p-5">
+        <div className="flex-1 overflow-y-auto p-5">
           {/* Filter row */}
           <div className="mb-3 flex flex-wrap items-center gap-1">
             {FILTER_MODES.map(({ value, label }) => {
@@ -307,22 +314,23 @@ export default function QuestionBankPicker({
             )}
           </div>
 
-          <div className="mt-4 flex items-center justify-between gap-3">
-            <div className="text-[12px] text-[var(--muted-foreground)]">
-              {selectedIds.length === 1
-                ? t("1 question selected")
-                : t("{n} questions selected", { n: selectedIds.length })}
-            </div>
-            <button
-              onClick={handleApply}
-              disabled={!selectedIds.length}
-              className="btn-primary rounded-xl bg-[var(--primary)] px-4 py-2.5 text-[13px] font-medium text-[var(--primary-foreground)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {t("Use Selected Questions ({n})", { n: selectedIds.length })}
-            </button>
-          </div>
         </div>
-      </div>
-    </div>
+
+        <SheetFooter className="border-t border-[var(--border)] pt-3">
+          <div className="mr-auto self-center text-[12px] text-[var(--muted-foreground)]">
+            {selectedIds.length === 1
+              ? t("1 question selected")
+              : t("{n} questions selected", { n: selectedIds.length })}
+          </div>
+          <Button
+            size="sm"
+            onClick={handleApply}
+            disabled={!selectedIds.length}
+          >
+            {t("Use Selected Questions ({n})", { n: selectedIds.length })}
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }
