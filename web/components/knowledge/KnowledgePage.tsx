@@ -5,10 +5,31 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 import { useKnowledgeBases } from "@/hooks/useKnowledgeBases";
-import KnowledgeBaseList from "./KnowledgeBaseList";
+import { ListPane, RouteFrame } from "@/components/layout";
+import KnowledgeBaseList, {
+  KnowledgeBaseListCollapsed,
+} from "./KnowledgeBaseList";
 import KnowledgeBaseDetail from "./KnowledgeBaseDetail";
 import CreateKbModal from "./CreateKbModal";
 
+/**
+ * Phase 0.5.5 pilot — first route to compose the new layout primitives.
+ *
+ * Composition:
+ *
+ *   <RouteFrame>
+ *     <ListPane id="knowledge-kb-list" title="Knowledge bases"
+ *               collapsedContent={<KnowledgeBaseListCollapsed/>}>
+ *       <KnowledgeBaseList ... />
+ *     </ListPane>
+ *     <main aria-label="Knowledge base detail">
+ *       <KnowledgeBaseDetail ... />
+ *     </main>
+ *   </RouteFrame>
+ *
+ * The aside chrome / collapse / title now lives entirely in `<ListPane>`.
+ * `KnowledgeBaseList` was reduced to its inner content.
+ */
 export default function KnowledgePage() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -38,9 +59,6 @@ export default function KnowledgePage() {
   );
   const [createOpen, setCreateOpen] = useState(false);
 
-  // Derive the effective selection: respect the user's pick if it still
-  // exists, otherwise fall back to the default KB (or the first one). No
-  // useEffect chains — keeps state out of effects.
   const selectedKbName = useMemo<string | null>(() => {
     if (
       explicitSelection &&
@@ -98,11 +116,7 @@ export default function KnowledgePage() {
 
   const handleDelete = useCallback(
     async (name: string) => {
-      if (
-        !window.confirm(
-          t('Delete knowledge base "{{name}}"?', { name }),
-        )
-      ) {
+      if (!window.confirm(t('Delete knowledge base "{{name}}"?', { name }))) {
         return;
       }
       try {
@@ -138,10 +152,12 @@ export default function KnowledgePage() {
     [reindex, setError],
   );
 
+  const titleCount = kbs.length ? `${t("Knowledge bases")} · ${kbs.length}` : t("Knowledge bases");
+
   return (
-    <div className="flex h-full flex-col bg-[var(--background)]">
+    <div className="flex h-full flex-col">
       {error && (
-        <div className="flex items-center justify-between gap-3 border-b border-red-200 bg-red-50 px-4 py-2 text-[12.5px] text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+        <div className="flex items-center justify-between gap-3 bg-red-50 px-4 py-2 text-[12.5px] text-red-700 dark:bg-red-950/30 dark:text-red-300">
           <span className="truncate">{error}</span>
           <div className="flex items-center gap-2">
             <button
@@ -164,32 +180,58 @@ export default function KnowledgePage() {
 
       {loading ? (
         <div className="flex flex-1 items-center justify-center">
-          <Loader2 className="h-5 w-5 animate-spin text-[var(--muted-foreground)]" />
+          <Loader2
+            className="h-5 w-5 animate-spin text-[var(--muted-foreground)]"
+            aria-hidden="true"
+          />
         </div>
       ) : (
-        <div className="flex min-h-0 flex-1">
-          <KnowledgeBaseList
-            kbs={kbs}
-            selectedKbName={selectedKbName}
-            onSelect={setExplicitSelection}
-            onCreate={() => setCreateOpen(true)}
-            onSetDefault={handleSetDefault}
-            onDelete={handleDelete}
-            tasksByKb={tasksByKb}
-          />
-          <KnowledgeBaseDetail
-            kb={selectedKb}
-            uploadPolicy={uploadPolicy}
-            task={selectedKb ? tasksByKb[selectedKb.name] : undefined}
-            history={selectedKb ? (historyByKb[selectedKb.name] ?? []) : []}
-            onCreate={() => setCreateOpen(true)}
-            onUpload={handleUpload}
-            onReindex={handleReindex}
-            onSetDefault={handleSetDefault}
-            onDelete={handleDelete}
-            onClearHistory={clearHistory}
-          />
-        </div>
+        <RouteFrame>
+          <ListPane
+            id="knowledge-kb-list"
+            title={titleCount}
+            collapsedContent={
+              <KnowledgeBaseListCollapsed
+                kbs={kbs}
+                selectedKbName={selectedKbName}
+                onSelect={setExplicitSelection}
+                onCreate={() => setCreateOpen(true)}
+                tasksByKb={tasksByKb}
+              />
+            }
+            width={260}
+            collapsedWidth={48}
+          >
+            <KnowledgeBaseList
+              kbs={kbs}
+              selectedKbName={selectedKbName}
+              onSelect={setExplicitSelection}
+              onCreate={() => setCreateOpen(true)}
+              onSetDefault={handleSetDefault}
+              onDelete={handleDelete}
+              tasksByKb={tasksByKb}
+            />
+          </ListPane>
+          <section
+            aria-label={
+              selectedKb ? `${t("Knowledge base")} ${selectedKb.name}` : t("Knowledge base detail")
+            }
+            className="flex min-w-0 flex-1 flex-col"
+          >
+            <KnowledgeBaseDetail
+              kb={selectedKb}
+              uploadPolicy={uploadPolicy}
+              task={selectedKb ? tasksByKb[selectedKb.name] : undefined}
+              history={selectedKb ? historyByKb[selectedKb.name] ?? [] : []}
+              onCreate={() => setCreateOpen(true)}
+              onUpload={handleUpload}
+              onReindex={handleReindex}
+              onSetDefault={handleSetDefault}
+              onDelete={handleDelete}
+              onClearHistory={clearHistory}
+            />
+          </section>
+        </RouteFrame>
       )}
 
       <CreateKbModal

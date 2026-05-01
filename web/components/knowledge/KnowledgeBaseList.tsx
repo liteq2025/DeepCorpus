@@ -2,14 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Database,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Plus,
-  Search,
-  Star,
-} from "lucide-react";
+import { Database, Plus, Search, Star } from "lucide-react";
 import {
   kbHasLiveProgress,
   kbNeedsReindex,
@@ -17,7 +10,6 @@ import {
   type KnowledgeBase,
 } from "@/lib/knowledge-helpers";
 import type { TaskState } from "@/hooks/useKnowledgeProgress";
-import { useCollapsiblePanel } from "@/hooks/useCollapsiblePanel";
 import KnowledgeBaseListItem from "./KnowledgeBaseListItem";
 
 interface KnowledgeBaseListProps {
@@ -30,6 +22,12 @@ interface KnowledgeBaseListProps {
   tasksByKb: Record<string, TaskState>;
 }
 
+/**
+ * The expanded inner content of the Knowledge Bases list. Caller is
+ * expected to wrap this in a `<ListPane>` (Phase 0.5.5 pilot migration);
+ * the surrounding chrome (aside / title / collapse) lives in the
+ * primitive, not here.
+ */
 export default function KnowledgeBaseList({
   kbs,
   selectedKbName,
@@ -41,7 +39,6 @@ export default function KnowledgeBaseList({
 }: KnowledgeBaseListProps) {
   const { t } = useTranslation();
   const [query, setQuery] = useState("");
-  const { collapsed, toggle } = useCollapsiblePanel("knowledge-kb-list");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -49,72 +46,9 @@ export default function KnowledgeBaseList({
     return kbs.filter((kb) => kb.name.toLowerCase().includes(q));
   }, [kbs, query]);
 
-  if (collapsed) {
-    return (
-      <aside className="flex h-full w-[48px] shrink-0 flex-col items-center gap-1 border-r border-[var(--border)] bg-[var(--card)] py-2">
-        <button
-          type="button"
-          onClick={toggle}
-          title={t("Expand")}
-          aria-label={t("Expand")}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-        >
-          <PanelLeftOpen size={14} strokeWidth={1.7} />
-        </button>
-
-        <button
-          type="button"
-          onClick={onCreate}
-          title={t("New knowledge base")}
-          aria-label={t("New knowledge base")}
-          className="mb-1 flex h-8 w-8 items-center justify-center rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] transition-opacity hover:opacity-90"
-        >
-          <Plus size={14} strokeWidth={2} />
-        </button>
-
-        <div className="my-1 h-px w-6 bg-[var(--border)]/60" />
-
-        <div className="flex w-full flex-1 flex-col items-center gap-0.5 overflow-y-auto px-1 pb-2">
-          {kbs.map((kb) => (
-            <CollapsedKbDot
-              key={kb.name}
-              kb={kb}
-              selected={selectedKbName === kb.name}
-              isReindexingLocally={
-                tasksByKb[kb.name]?.kind === "reindex" &&
-                tasksByKb[kb.name]?.executing === true
-              }
-              onSelect={() => onSelect(kb.name)}
-            />
-          ))}
-        </div>
-      </aside>
-    );
-  }
-
   return (
-    <aside className="flex h-full w-[260px] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--card)]">
-      <div className="space-y-2.5 px-3 pb-2 pt-3">
-        <div className="flex items-center justify-between gap-2 px-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-[13px] font-semibold text-[var(--foreground)]">
-              {t("Knowledge Bases")}
-            </h2>
-            <span className="rounded-full bg-[var(--muted)] px-1.5 py-0.5 text-[10px] text-[var(--muted-foreground)]">
-              {kbs.length}
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={toggle}
-            title={t("Collapse")}
-            aria-label={t("Collapse")}
-            className="rounded-md p-1 text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-          >
-            <PanelLeftClose size={13} strokeWidth={1.7} />
-          </button>
-        </div>
-
+    <div className="flex h-full flex-col">
+      <div className="space-y-2.5 px-3 pb-2">
         <button
           type="button"
           onClick={onCreate}
@@ -174,7 +108,52 @@ export default function KnowledgeBaseList({
           </div>
         )}
       </div>
-    </aside>
+    </div>
+  );
+}
+
+/**
+ * Icon-strip rendering for `<ListPane collapsedContent={<KnowledgeBaseListCollapsed ... />}>`.
+ * Mirrors the items shown in the expanded list, just compact.
+ */
+export function KnowledgeBaseListCollapsed({
+  kbs,
+  selectedKbName,
+  onSelect,
+  onCreate,
+  tasksByKb,
+}: Pick<
+  KnowledgeBaseListProps,
+  "kbs" | "selectedKbName" | "onSelect" | "onCreate" | "tasksByKb"
+>) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex h-full flex-col items-center gap-1 py-2">
+      <button
+        type="button"
+        onClick={onCreate}
+        title={t("New knowledge base")}
+        aria-label={t("New knowledge base")}
+        className="mb-1 flex h-8 w-8 items-center justify-center rounded-md bg-[var(--primary)] text-[var(--primary-foreground)] transition-opacity hover:opacity-90"
+      >
+        <Plus size={14} strokeWidth={2} />
+      </button>
+      <div className="my-1 h-px w-6 bg-[var(--border)]/60" />
+      <div className="flex w-full flex-1 flex-col items-center gap-0.5 overflow-y-auto px-1 pb-2">
+        {kbs.map((kb) => (
+          <CollapsedKbDot
+            key={kb.name}
+            kb={kb}
+            selected={selectedKbName === kb.name}
+            isReindexingLocally={
+              tasksByKb[kb.name]?.kind === "reindex" &&
+              tasksByKb[kb.name]?.executing === true
+            }
+            onSelect={() => onSelect(kb.name)}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 

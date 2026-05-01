@@ -11,6 +11,13 @@ interface ListPaneProps {
   /** Used as both visual title and `aria-label` on the <aside>. */
   title: string;
   children: ReactNode;
+  /**
+   * Optional render slot used when the pane is collapsed. When provided,
+   * the icon-strip stays visible (e.g. KB dots / item icons) so the user
+   * keeps quick access. When omitted, the pane simply hides content.
+   * Pilot-derived (Phase 0.5.5) — knowledge route needs an icon strip.
+   */
+  collapsedContent?: ReactNode;
   /** Initial collapsed state if there's no persisted value yet. */
   defaultCollapsed?: boolean;
   /** Pixel widths for the two states; defaults match the responsive matrix. */
@@ -35,6 +42,7 @@ export function ListPane({
   id,
   title,
   children,
+  collapsedContent,
   defaultCollapsed = false,
   width = 280,
   collapsedWidth = 56,
@@ -75,9 +83,13 @@ export function ListPane({
           )}
         </button>
       </div>
-      {!collapsed && (
-        <div className="flex-1 overflow-y-auto px-2 pb-4">{children}</div>
-      )}
+      {collapsed
+        ? collapsedContent && (
+            <div className="flex-1 overflow-y-auto">{collapsedContent}</div>
+          )
+        : (
+            <div className="flex-1 overflow-y-auto px-2 pb-4">{children}</div>
+          )}
     </aside>
   );
 }
