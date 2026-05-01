@@ -29,6 +29,18 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
     {
+      // Phase 0.5.9: mobile breakpoint validation. Reuses the same
+      // smoke specs but at a mobile-Chrome viewport (Pixel 5 — 393 px
+      // wide, comfortably under our 640 px mobile breakpoint) so we
+      // catch regressions where a route renders at desktop width but
+      // breaks below 640 px. Pixel 5 over iPhone so we stay on
+      // Chromium and don't have to ship a webkit install. Run with
+      // `npm run test:smoke:mobile`.
+      name: "smoke-mobile",
+      testMatch: "**/*.smoke.ts",
+      use: { ...devices["Pixel 5"] },
+    },
+    {
       name: "visual",
       testMatch: "**/*.visual.ts",
       // Pin viewport so snapshots are reproducible across machines.
