@@ -294,7 +294,7 @@ function SpotlightOverlay({
   const tooltipLeft = Math.max(16, Math.min(holeLeft, window.innerWidth - 340));
 
   return (
-    <div className="fixed inset-0 z-[9999]">
+    <div className="fixed inset-0 z-toast">
       <div
         className="absolute inset-0 bg-black/50 transition-all duration-300"
         style={{ clipPath }}

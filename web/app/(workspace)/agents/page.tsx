@@ -1622,7 +1622,7 @@ function ProfilesTab({
         </div>
       )}
       {saveModalOpen && activeFile === "SOUL.md" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+        <div className="fixed inset-0 z-dialog flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-md rounded-xl border border-[var(--border)] bg-[var(--background)] p-5 shadow-xl">
             <h3 className="text-[15px] font-medium text-[var(--foreground)]">
               {t("Save SOUL.md")}
@@ -1713,7 +1713,7 @@ function ProfilesTab({
         </div>
       )}
       {replaceModalOpen && activeFile === "SOUL.md" && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+        <div className="fixed inset-0 z-dialog flex items-center justify-center bg-black/50 px-4">
           <div className="w-full max-w-md rounded-xl border border-[var(--border)] bg-[var(--background)] p-5 shadow-xl">
             <h3 className="text-[15px] font-medium text-[var(--foreground)]">
               {t("Replace SOUL.md content?")}

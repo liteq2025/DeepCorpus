@@ -1858,7 +1858,7 @@ export default function CoWriterPage() {
         <div
           ref={selectionPopoverRef}
           onMouseDown={handleSelectionPopoverDragStart}
-          className={`fixed z-50 rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2.5 shadow-2xl ${
+          className={`fixed z-popover rounded-2xl border border-[var(--border)] bg-[var(--card)] p-2.5 shadow-2xl ${
             isDraggingSelectionPopover ? "cursor-grabbing" : "cursor-grab"
           }`}
           style={{
@@ -2109,7 +2109,7 @@ export default function CoWriterPage() {
       {/* ── AI Edit modal ── */}
       {isEditModalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm"
+          className="fixed inset-0 z-dialog flex items-center justify-center bg-black/30 backdrop-blur-sm"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsEditModalOpen(false);
           }}

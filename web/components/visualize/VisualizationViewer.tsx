@@ -291,7 +291,7 @@ export default function VisualizationViewer({
       {/* Fullscreen overlay */}
       {fullscreen && supportsFullscreen && (
         <div
-          className="fixed inset-0 z-[120] flex flex-col bg-black/85 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-toast flex flex-col bg-black/85 p-4 backdrop-blur-sm"
           onClick={() => setFullscreen(false)}
         >
           <div className="mb-2 flex shrink-0 items-center justify-between text-white">

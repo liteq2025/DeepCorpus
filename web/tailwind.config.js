@@ -21,6 +21,21 @@ module.exports = {
         "2xs": ["0.6875rem", { lineHeight: "1.5" }], // 11px
         hero: ["2.25rem", { lineHeight: "1.2" }], // 36px
       },
+      // Canonical z-index ladder for the 9-layer overlay stack.
+      // See docs/refactor/phase-0.5-layout.md §2.
+      //
+      // Each layer is reserved with a 10-unit gap so future layers can
+      // be inserted without renumbering. Use the named tokens
+      // (z-base / z-sheet / z-dialog / z-popover / z-tooltip / z-toast)
+      // — never raw numbers in component code.
+      zIndex: {
+        base: "10", // Layer 0/1/2/3/4 (page chrome surfaces)
+        sheet: "40", // Layer 5 (Sheet — slide-in side panel)
+        dialog: "50", // Layer 6 (Dialog / AlertDialog — modal)
+        popover: "60", // Layer 7 (Popover / DropdownMenu — anchored)
+        tooltip: "70", // Layer 8 (Tooltip)
+        toast: "80", // Layer 9 (Toaster — top of the world)
+      },
       colors: {
         border: "var(--border)",
         input: "var(--input)",

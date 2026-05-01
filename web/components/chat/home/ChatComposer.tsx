@@ -333,7 +333,7 @@ export default memo(function ChatComposer({
       {capMenuOpen && (
         <div
           ref={capMenuRef}
-          className="absolute bottom-full left-0 right-0 z-50 mb-1"
+          className="absolute bottom-full left-0 right-0 z-popover mb-1"
         >
           <div className="mx-auto">
             <div className="w-[280px] rounded-xl border border-[var(--border)] bg-[var(--popover)] py-1.5 shadow-lg backdrop-blur-md">
@@ -630,7 +630,7 @@ export default memo(function ChatComposer({
                     {toolMenuOpen && (
                       <div
                         ref={toolMenuRef}
-                        className="absolute bottom-full left-0 z-50 mb-1.5 min-w-[180px] rounded-lg border border-[var(--border)] bg-[var(--popover)] py-1 shadow-lg backdrop-blur-md"
+                        className="absolute bottom-full left-0 z-popover mb-1.5 min-w-[180px] rounded-lg border border-[var(--border)] bg-[var(--popover)] py-1 shadow-lg backdrop-blur-md"
                       >
                         {researchSources.map((source) => {
                           const active = researchConfig.sources.includes(
@@ -698,7 +698,7 @@ export default memo(function ChatComposer({
                     {toolMenuOpen && (
                       <div
                         ref={toolMenuRef}
-                        className="absolute bottom-full left-0 z-50 mb-1.5 min-w-[180px] rounded-lg border border-[var(--border)] bg-[var(--popover)] py-1 shadow-lg backdrop-blur-md"
+                        className="absolute bottom-full left-0 z-popover mb-1.5 min-w-[180px] rounded-lg border border-[var(--border)] bg-[var(--popover)] py-1 shadow-lg backdrop-blur-md"
                       >
                         {visibleTools.map((tool) => {
                           const active = selectedTools.has(tool.name);
@@ -764,7 +764,7 @@ export default memo(function ChatComposer({
                   {refMenuOpen && (
                     <div
                       ref={refMenuRef}
-                      className="absolute bottom-full left-0 z-50 mb-1.5 min-w-[180px] rounded-lg border border-[var(--border)] bg-[var(--popover)] py-1 shadow-lg backdrop-blur-md"
+                      className="absolute bottom-full left-0 z-popover mb-1.5 min-w-[180px] rounded-lg border border-[var(--border)] bg-[var(--popover)] py-1 shadow-lg backdrop-blur-md"
                     >
                       <button
                         onClick={() => {
@@ -861,7 +861,7 @@ export default memo(function ChatComposer({
                     {skillMenuOpen && (
                       <div
                         ref={skillMenuRef}
-                        className="absolute bottom-full left-0 z-50 mb-1.5 max-h-[280px] min-w-[220px] overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--popover)] py-1 shadow-lg backdrop-blur-md"
+                        className="absolute bottom-full left-0 z-popover mb-1.5 max-h-[280px] min-w-[220px] overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--popover)] py-1 shadow-lg backdrop-blur-md"
                       >
                         <button
                           onClick={() => onSetSkillsAuto(!skillsAutoMode)}
