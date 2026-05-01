@@ -399,7 +399,10 @@ function BookPageInner() {
         />
       )}
 
-      <main className="relative flex flex-1 overflow-hidden bg-[var(--background)]">
+      <section
+        aria-label="Book workspace"
+        className="relative flex flex-1 overflow-hidden"
+      >
         {/* Persistent mini progress chip — floats top-right of the workspace
             across creator/spine/reader views as long as generation activity
             exists and isn't fully complete. */}
@@ -511,7 +514,7 @@ function BookPageInner() {
             onClose={() => setChatOpen(false)}
           />
         )}
-      </main>
+      </section>
     </div>
   );
 }

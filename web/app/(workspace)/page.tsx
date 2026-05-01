@@ -1,30 +1,37 @@
-"use client";
-
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 
 /**
- * Root page now redirects to /chat.
- * Handles backward compatibility for /?session=xxx URLs.
+ * Root workspace page redirects to /chat.
+ * Handles backward compatibility for `?session=xxx` and capability/tool
+ * query strings (e.g. links shared from older chat sessions).
+ *
+ * Phase 0.5.1: server-side redirect (was client `useEffect → router.replace`)
+ * — no flash of empty content while client hydrates.
  */
-export default function HomePage() {
-  const router = useRouter();
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get("session");
-    const capability = params.get("capability");
-    const tools = params.getAll("tool");
+  const sessionId =
+    typeof params.session === "string" ? params.session : undefined;
+  const capability =
+    typeof params.capability === "string" ? params.capability : undefined;
+  const toolValue = params.tool;
+  const tools = Array.isArray(toolValue)
+    ? toolValue
+    : typeof toolValue === "string"
+      ? [toolValue]
+      : [];
 
-    let target = sessionId ? `/chat/${sessionId}` : "/chat";
+  let target = sessionId ? `/chat/${sessionId}` : "/chat";
 
-    const query: string[] = [];
-    if (capability) query.push(`capability=${encodeURIComponent(capability)}`);
-    tools.forEach((t) => query.push(`tool=${encodeURIComponent(t)}`));
-    if (query.length) target += `?${query.join("&")}`;
+  const query: string[] = [];
+  if (capability) query.push(`capability=${encodeURIComponent(capability)}`);
+  tools.forEach((t) => query.push(`tool=${encodeURIComponent(t)}`));
+  if (query.length) target += `?${query.join("&")}`;
 
-    router.replace(target);
-  }, [router]);
-
-  return null;
+  redirect(target);
 }

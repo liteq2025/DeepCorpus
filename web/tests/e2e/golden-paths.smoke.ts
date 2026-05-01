@@ -51,7 +51,7 @@ test.describe("smoke :: golden paths", () => {
     const response = await page.goto(`${BASE_URL}/knowledge`);
     expect(response?.ok()).toBe(true);
     // Page mounts a main element even when the KB list is empty.
-    await expect(page.locator("main").first()).toBeVisible();
+    await expect(page.locator("main")).toBeVisible();
     // No client-side runtime error should escape to the dev overlay.
     await expect(
       page.locator("text=Application error: a client-side exception"),
@@ -61,7 +61,7 @@ test.describe("smoke :: golden paths", () => {
   test("/book route renders without crashing", async ({ page }) => {
     const response = await page.goto(`${BASE_URL}/book`);
     expect(response?.ok()).toBe(true);
-    await expect(page.locator("main").first()).toBeVisible();
+    await expect(page.locator("main")).toBeVisible();
     await expect(
       page.locator("text=Application error: a client-side exception"),
     ).toHaveCount(0);

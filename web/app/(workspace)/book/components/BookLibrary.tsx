@@ -207,7 +207,10 @@ export default function BookLibrary({
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto px-6 py-6">
+      <section
+        aria-label="Book library"
+        className="flex-1 overflow-y-auto px-6 py-6"
+      >
         {/* Stats row */}
         <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <StatCard
@@ -408,7 +411,7 @@ export default function BookLibrary({
             })}
           </div>
         )}
-      </main>
+      </section>
     </div>
   );
 }
