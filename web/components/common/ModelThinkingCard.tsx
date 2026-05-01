@@ -88,7 +88,10 @@ export default function ModelThinkingCard({
           />
         )}
       </summary>
-      <div className="border-t border-[var(--border)]/40 bg-[var(--background)]/40 px-3 py-2">
+      <div
+        className="overflow-y-auto border-t border-[var(--border)]/40 bg-[var(--background)]/40 px-3 py-2"
+        style={{ maxHeight: "480px" }}
+      >
         {hasBody ? (
           <MarkdownRenderer content={content} variant="trace" />
         ) : (
