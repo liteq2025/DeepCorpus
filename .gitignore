@@ -10,8 +10,10 @@ data/
 run_code_workspace/
 deeptutor/agents/question/reference_papers/
 deeptutor/services/rag/eg_only_for_analysis/
-docs/
-.github
+docs/*
+!docs/refactor/
+.github/*
+!.github/workflows/
 
 # LaTeX build artifacts
 *.aux
