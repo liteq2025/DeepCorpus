@@ -14,7 +14,7 @@ import {
   Wrench,
 } from "lucide-react";
 
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui/button";
 import Modal from "@/components/common/Modal";
 import ProcessLogs from "@/components/common/ProcessLogs";
 import RichCodeBlock from "@/components/common/RichCodeBlock";
@@ -293,18 +293,21 @@ function ButtonPreview() {
       <div>
         <VariantLabel>variant</VariantLabel>
         <Row>
-          <Button variant="primary">Primary</Button>
+          <Button>Default</Button>
           <Button variant="secondary">Secondary</Button>
-          <Button variant="danger">Danger</Button>
+          <Button variant="destructive">Destructive</Button>
+          <Button variant="outline">Outline</Button>
           <Button variant="ghost">Ghost</Button>
+          <Button variant="link">Link</Button>
         </Row>
       </div>
       <div>
         <VariantLabel>size</VariantLabel>
         <Row>
-          <Button size="sm">Small</Button>
-          <Button size="md">Medium</Button>
-          <Button size="lg">Large</Button>
+          <Button size="xs">XS</Button>
+          <Button size="sm">SM</Button>
+          <Button size="default">Default</Button>
+          <Button size="lg">LG</Button>
         </Row>
       </div>
       <div>

@@ -2,9 +2,9 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import Button from "./Button";
+import { Button } from "./button";
 
-describe("Button", () => {
+describe("Button (shadcn)", () => {
   it("renders children as accessible name", () => {
     render(<Button>Click me</Button>);
     expect(
@@ -30,14 +30,23 @@ describe("Button", () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
+  // Fork extension: loading prop disables the button + renders a spinner.
   it("disables the button while loading", () => {
     render(<Button loading>Save</Button>);
     expect(screen.getByRole("button")).toBeDisabled();
   });
 
-  it("applies the danger variant class", () => {
-    render(<Button variant="danger">Delete</Button>);
+  it("applies the destructive variant class", () => {
+    render(<Button variant="destructive">Delete</Button>);
     const className = screen.getByRole("button").className;
     expect(className).toMatch(/destructive/);
+  });
+
+  it("renders the data-variant attribute (shadcn convention)", () => {
+    render(<Button variant="ghost">Cancel</Button>);
+    expect(screen.getByRole("button")).toHaveAttribute(
+      "data-variant",
+      "ghost",
+    );
   });
 });
