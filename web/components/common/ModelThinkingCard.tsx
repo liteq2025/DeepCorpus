@@ -5,6 +5,7 @@ import { BrainCircuit, ChevronDown, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import MarkdownRenderer from "./MarkdownRenderer";
+import { ICON_XS } from "@/lib/icon-sizes";
 
 interface ModelThinkingCardProps {
   /** Inner text of a single <think>...</think> block (already trimmed). */
@@ -68,21 +69,21 @@ export default function ModelThinkingCard({
       onToggle={handleToggle}
       className="group/think my-3 overflow-hidden rounded-xl border border-[var(--border)]/60 bg-[var(--card)]/40 transition-colors hover:border-[var(--border)]"
     >
-      <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-[12px] font-medium text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)] [&::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs font-medium text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)] [&::-webkit-details-marker]:hidden">
         <ChevronDown
-          size={12}
+          size={ICON_XS}
           strokeWidth={1.8}
           className="shrink-0 opacity-70 transition-transform group-open/think:rotate-180"
         />
         <BrainCircuit
-          size={12}
+          size={ICON_XS}
           strokeWidth={1.6}
           className="shrink-0 opacity-80"
         />
         <span className="tracking-wide">{t("Model thinking")}</span>
         {!closed && (
           <Loader2
-            size={11}
+            size={ICON_XS}
             strokeWidth={1.8}
             className="ml-1 animate-spin text-[var(--muted-foreground)]/70"
           />

@@ -109,6 +109,23 @@
    *      should expect them to be replaced.
    *
    *      Currently the codebase has 98 distinct text colors. Goal: ≤ 12.
+   *
+   *  ⑧ Icon sizing canonical scale (lucide-react)
+   *
+   *      Pick a tier by role, not pixel guesswork. Constants live in
+   *      `lib/icon-sizes.ts` — import them instead of hard-coding.
+   *
+   *        ICON_XS (12) — inline marks alongside text
+   *                       chevrons in <details>, separator dots, micro pips
+   *        ICON_SM (14) — compact controls
+   *                       copy buttons, table-row actions, chip dismiss
+   *        ICON_MD (16) — primary buttons & nav
+   *                       sidebar nav, default action buttons
+   *        ICON_LG (20) — page-level affordances
+   *                       PageHeader icons, hero CTAs, empty-state icons
+   *
+   *      Icon-only buttons use a 2× hit target (h-6/7/8/10) — keeps the
+   *      24 px accessibility minimum without bloating the visual rhythm.
    */
   :root {
     color-scheme: light;

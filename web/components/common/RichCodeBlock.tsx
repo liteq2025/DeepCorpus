@@ -7,6 +7,7 @@ import {
   oneDark,
   oneLight,
 } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { ICON_SM } from "@/lib/icon-sizes";
 
 const MONOSPACE =
   'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace';
@@ -75,12 +76,12 @@ function CopyButton({ text }: { text: string }) {
       type="button"
       onClick={handleCopy}
       aria-label={copied ? "Copied" : "Copy code"}
-      className="inline-flex h-5 w-5 items-center justify-center rounded text-[var(--muted-foreground)]/60 transition-colors hover:bg-[var(--muted)]/40 hover:text-[var(--foreground)]"
+      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)]/60 hover:text-[var(--foreground)]"
     >
       {copied ? (
-        <Check size={11} strokeWidth={2} />
+        <Check size={ICON_SM} strokeWidth={2} />
       ) : (
-        <Copy size={11} strokeWidth={1.8} />
+        <Copy size={ICON_SM} strokeWidth={1.8} />
       )}
     </button>
   );
@@ -107,7 +108,7 @@ export default function RichCodeBlock({
       className={`md-code-block group/code my-3 overflow-hidden rounded-xl border border-[var(--border)]/60 bg-[var(--card)]/40 transition-colors hover:border-[var(--border)] ${className || ""}`}
     >
       {!isPlain ? (
-        <div className="flex items-center justify-between border-b border-[var(--border)]/40 px-3 py-1.5 text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]/60">
+        <div className="flex items-center justify-between gap-2 px-3 py-1 text-2xs font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
           <span>{normalizedLang}</span>
           <CopyButton text={raw} />
         </div>
