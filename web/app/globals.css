@@ -26,37 +26,61 @@
    *   - Code blocks adapt to theme via RichCodeBlock (subtle elevation,
    *     not stark contrast).
    */
+  /*
+   * Iteration 2 design rules (locked in until next iteration):
+   *
+   *  ① Color cast is intentionally faint. Chroma stays ≤ 0.004 in light
+   *    mode and ≤ 0.002 in dark — the eye reads "near-neutral with a hint
+   *    of warmth" rather than "warm cream". Hierarchy comes from lightness
+   *    ladder, NOT from hue shifts.
+   *
+   *  ② Borders are vestigial. `--border` is set so faint that nested
+   *    borders won't pile up visually. Components SHOULD prefer:
+   *      a. spacing (margin / padding)
+   *      b. background lightness step
+   *      c. soft shadow
+   *      d. ONE border (only the outermost container)
+   *    Only fall back to a border when (a)–(c) genuinely don't work.
+   *
+   *  ③ Single-border principle: do NOT nest a bordered region inside
+   *    another bordered region. If you find yourself doing it, you're
+   *    creating box-in-box; refactor to a single border + interior bg
+   *    shift.
+   *
+   *  ④ Simplicity > decoration. Remove visual noise before adding any.
+   */
   :root {
     color-scheme: light;
-    /* Surfaces (light, warm) */
-    --background: oklch(0.97 0.008 75);
-    --foreground: oklch(0.22 0.008 50);
-    --card: oklch(0.985 0.005 75);
-    --card-foreground: oklch(0.22 0.008 50);
-    --popover: oklch(0.99 0.003 75);
-    --popover-foreground: oklch(0.22 0.008 50);
+    /* Surfaces — warm bias dialed down (chroma 0.003 max). Hierarchy is
+       carried by lightness, not hue. */
+    --background: oklch(0.975 0.003 75);
+    --foreground: oklch(0.22 0.004 50);
+    --card: oklch(0.99 0.002 75);
+    --card-foreground: oklch(0.22 0.004 50);
+    --popover: oklch(0.995 0.002 75);
+    --popover-foreground: oklch(0.22 0.004 50);
 
     /* Brand */
     --primary: oklch(0.457 0.24 277);
-    --primary-foreground: oklch(0.985 0.005 75);
+    --primary-foreground: oklch(0.985 0.002 75);
 
-    /* Functional surfaces */
-    --secondary: oklch(0.93 0.012 75);
-    --secondary-foreground: oklch(0.30 0.008 60);
-    --muted: oklch(0.94 0.012 75);
-    --muted-foreground: oklch(0.50 0.012 60);
-    --accent: oklch(0.93 0.014 75);
-    --accent-foreground: oklch(0.25 0.008 50);
+    /* Functional surfaces — distinguished by lightness, not chroma */
+    --secondary: oklch(0.945 0.003 75);
+    --secondary-foreground: oklch(0.30 0.004 60);
+    --muted: oklch(0.95 0.003 75);
+    --muted-foreground: oklch(0.50 0.005 60);
+    --accent: oklch(0.94 0.004 75);
+    --accent-foreground: oklch(0.25 0.004 50);
 
     --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.985 0.005 75);
+    --destructive-foreground: oklch(0.985 0.002 75);
 
-    /* Edges (kept light to reduce visual noise) */
-    --border: oklch(0.90 0.008 70);
-    --input: oklch(0.90 0.008 70);
-    --ring: oklch(0.65 0.015 60);
+    /* Edges — see rule ②. Designed to be barely visible so nested
+       borders simply don't add up. */
+    --border: oklch(0.92 0.003 70);
+    --input: oklch(0.92 0.003 70);
+    --ring: oklch(0.65 0.005 60);
 
-    /* Charts (indigo ramp, unchanged from preset) */
     --chart-1: oklch(0.785 0.115 274.713);
     --chart-2: oklch(0.585 0.233 277.117);
     --chart-3: oklch(0.511 0.262 276.966);
@@ -64,46 +88,57 @@
     --chart-5: oklch(0.398 0.195 277.366);
     --radius: 0.625rem;
 
-    /* Sidebar (intentionally a tick darker than --background so the
-       split is readable without a strong border) */
-    --sidebar: oklch(0.94 0.012 75);
-    --sidebar-foreground: oklch(0.25 0.008 50);
+    /* Sidebar — one tick darker than --background by lightness alone. */
+    --sidebar: oklch(0.945 0.003 75);
+    --sidebar-foreground: oklch(0.25 0.004 50);
     --sidebar-primary: oklch(0.511 0.262 276.966);
-    --sidebar-primary-foreground: oklch(0.985 0.005 75);
-    --sidebar-accent: oklch(0.92 0.014 75);
-    --sidebar-accent-foreground: oklch(0.25 0.008 50);
-    --sidebar-border: oklch(0.89 0.008 70);
-    --sidebar-ring: oklch(0.65 0.015 60);
+    --sidebar-primary-foreground: oklch(0.985 0.002 75);
+    --sidebar-accent: oklch(0.93 0.003 75);
+    --sidebar-accent-foreground: oklch(0.25 0.004 50);
+    --sidebar-border: oklch(0.91 0.003 70);
+    --sidebar-ring: oklch(0.65 0.005 60);
   }
 
   .dark {
     color-scheme: dark;
-    /* Surfaces (warm dark, not blue-black) */
-    --background: oklch(0.16 0.006 60);
-    --foreground: oklch(0.92 0.006 75);
-    --card: oklch(0.19 0.006 60);
-    --card-foreground: oklch(0.92 0.006 75);
-    --popover: oklch(0.21 0.006 60);
-    --popover-foreground: oklch(0.92 0.006 75);
+    /*
+     * Dark surfaces — chroma kept ≤ 0.002 (almost pure neutral grey).
+     * Lightness ladder spreads from 0.115 (deepest sidebar) to 0.245
+     * (highest popover/floating surface) so layered surfaces are
+     * distinguishable WITHOUT relying on color shift or borders.
+     *
+     * Ladder:
+     *   0.115  --sidebar         (deepest — recedes)
+     *   0.155  --background      (canvas)
+     *   0.195  --card            (resting card)
+     *   0.225  --popover         (overlay — clearly atop everything)
+     *   0.245  --sidebar-accent  (hover / selected highlight)
+     */
+    --background: oklch(0.155 0.002 60);
+    --foreground: oklch(0.93 0.002 75);
+    --card: oklch(0.195 0.002 60);
+    --card-foreground: oklch(0.93 0.002 75);
+    --popover: oklch(0.225 0.002 60);
+    --popover-foreground: oklch(0.93 0.002 75);
 
-    /* Brand (slightly brighter indigo for dark mode) */
     --primary: oklch(0.62 0.22 277);
-    --primary-foreground: oklch(0.16 0.006 60);
+    --primary-foreground: oklch(0.155 0.002 60);
 
-    --secondary: oklch(0.24 0.008 60);
-    --secondary-foreground: oklch(0.92 0.006 75);
-    --muted: oklch(0.23 0.008 60);
-    --muted-foreground: oklch(0.65 0.008 65);
-    --accent: oklch(0.27 0.010 60);
-    --accent-foreground: oklch(0.92 0.006 75);
+    --secondary: oklch(0.225 0.002 60);
+    --secondary-foreground: oklch(0.93 0.002 75);
+    --muted: oklch(0.21 0.002 60);
+    --muted-foreground: oklch(0.65 0.003 65);
+    --accent: oklch(0.255 0.002 60);
+    --accent-foreground: oklch(0.93 0.002 75);
 
     --destructive: oklch(0.65 0.22 25);
     --destructive-foreground: oklch(0.98 0 0);
 
-    /* Edges (low-alpha so multiple stacked borders don't add up) */
-    --border: oklch(1 0 0 / 0.07);
-    --input: oklch(1 0 0 / 0.10);
-    --ring: oklch(0.55 0.012 60);
+    /* Borders — even fainter in dark mode. Stacked nested borders
+       remain effectively invisible. */
+    --border: oklch(1 0 0 / 0.05);
+    --input: oklch(1 0 0 / 0.08);
+    --ring: oklch(0.55 0.005 60);
 
     --chart-1: oklch(0.785 0.115 274.713);
     --chart-2: oklch(0.585 0.233 277.117);
@@ -111,14 +146,14 @@
     --chart-4: oklch(0.457 0.24 277.023);
     --chart-5: oklch(0.398 0.195 277.366);
 
-    --sidebar: oklch(0.13 0.006 60);
-    --sidebar-foreground: oklch(0.92 0.006 75);
+    --sidebar: oklch(0.115 0.002 60);
+    --sidebar-foreground: oklch(0.93 0.002 75);
     --sidebar-primary: oklch(0.62 0.22 277);
-    --sidebar-primary-foreground: oklch(0.16 0.006 60);
-    --sidebar-accent: oklch(0.24 0.008 60);
-    --sidebar-accent-foreground: oklch(0.92 0.006 75);
-    --sidebar-border: oklch(1 0 0 / 0.07);
-    --sidebar-ring: oklch(0.55 0.012 60);
+    --sidebar-primary-foreground: oklch(0.155 0.002 60);
+    --sidebar-accent: oklch(0.245 0.002 60);
+    --sidebar-accent-foreground: oklch(0.93 0.002 75);
+    --sidebar-border: oklch(1 0 0 / 0.04);
+    --sidebar-ring: oklch(0.55 0.005 60);
   }
 
   /* Phase 0.2 dropped `theme-snow` and `theme-glass` (light/dark only).

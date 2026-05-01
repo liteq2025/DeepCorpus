@@ -39,7 +39,7 @@ function Chip({ entry }: { entry: TagEntry }) {
   const showCode = code && code !== cn;
 
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--card)] px-2 py-0.5 text-[11px]">
+    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--muted)] px-2.5 py-0.5 text-[11px]">
       <span className="text-[var(--foreground)]">{cn}</span>
       {showCode && (
         <span className="font-mono text-[10px] text-[var(--muted-foreground)]">
@@ -70,10 +70,12 @@ function TagChips({ tags }: { tags: TagEntry[] }) {
 }
 
 function GroupTable({ group }: { group: RegistryGroup }) {
+  // Single-border principle: row dividers carry the structure; we drop
+  // the outer wrapper border so rendering doesn't read as "box-in-box".
   return (
-    <div className="overflow-hidden rounded-lg border border-[var(--border)]">
+    <div className="overflow-hidden rounded-lg">
       <table className="w-full text-[13px]">
-        <thead className="bg-[var(--secondary)]/40 text-left text-[11px] uppercase tracking-wider text-[var(--muted-foreground)]">
+        <thead className="text-left text-[11px] uppercase tracking-wider text-[var(--muted-foreground)]">
           <tr>
             <th className="w-[24%] px-4 py-2.5 font-medium">类目</th>
             <th className="w-[6%] px-4 py-2.5 font-medium">数量</th>
@@ -85,7 +87,7 @@ function GroupTable({ group }: { group: RegistryGroup }) {
           {group.modules.map((mod) => (
             <tr
               key={mod.id}
-              className="border-t border-[var(--border)] align-top hover:bg-[var(--secondary)]/20"
+              className="border-t border-[var(--border)] align-top hover:bg-[var(--muted)]/40"
             >
               <td className="px-4 py-3">
                 <div className="flex flex-wrap items-baseline gap-x-1.5">
@@ -407,9 +409,11 @@ const TREE_FILE_COUNT = COMPONENT_TREE.split("\n").filter((line) =>
 ).length;
 
 function ComponentTreeView() {
+  // Single-border principle: outer card holds the border; the header
+  // separates from the <pre> by spacing alone (px/py-3 below + py-4 above).
   return (
-    <div className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)]/40">
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-[var(--border)] bg-[var(--secondary)]/30 px-4 py-2.5">
+    <div className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)]">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-4 pt-4 pb-3">
         <span className="text-[13px] font-medium text-[var(--foreground)]">
           UI 架构目录树
         </span>
@@ -421,7 +425,7 @@ function ComponentTreeView() {
           表示路由组，⚠ 表示已识别弱项
         </span>
       </div>
-      <pre className="overflow-x-auto px-5 py-4 font-mono text-[12px] leading-[1.55] text-[var(--foreground)]">
+      <pre className="overflow-x-auto px-5 pb-5 font-mono text-[12px] leading-[1.55] text-[var(--foreground)]">
         {COMPONENT_TREE}
       </pre>
     </div>
@@ -455,25 +459,29 @@ function groupShowcases(showcases: Showcase[]): Array<{
 
 function ShowcaseCard({ showcase }: { showcase: Showcase }) {
   const { Preview } = showcase;
+  // Single-border principle (Iteration 2 rule ③): only the outer wrapper
+  // gets a border. Internal sections separate via padding + spacing only.
   return (
-    <div className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)]/40">
-      <div className="flex items-baseline gap-2 border-b border-[var(--border)] bg-[var(--secondary)]/30 px-4 py-2.5">
-        <span className="text-[13px] font-medium text-[var(--foreground)]">
-          {showcase.name}
-        </span>
-        <span className="font-mono text-[11px] text-[var(--muted-foreground)]">
-          {`{${showcase.code}}`}
-        </span>
-        <span className="ml-auto rounded bg-[var(--secondary)]/40 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-[var(--muted-foreground)]">
-          {showcase.categoryCode}
-        </span>
-      </div>
-      {showcase.description && (
-        <div className="border-b border-[var(--border)] px-4 py-2 text-[11px] italic text-[var(--muted-foreground)]/80">
-          — {showcase.description}
+    <div className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--card)]">
+      <div className="flex flex-col gap-1 px-4 pt-4 pb-3">
+        <div className="flex items-baseline gap-2">
+          <span className="text-[13px] font-medium text-[var(--foreground)]">
+            {showcase.name}
+          </span>
+          <span className="font-mono text-[11px] text-[var(--muted-foreground)]">
+            {`{${showcase.code}}`}
+          </span>
+          <span className="ml-auto font-mono text-[10px] uppercase tracking-wider text-[var(--muted-foreground)]/70">
+            {showcase.categoryCode}
+          </span>
         </div>
-      )}
-      <div className="p-5">
+        {showcase.description && (
+          <div className="text-[11px] italic text-[var(--muted-foreground)]/80">
+            — {showcase.description}
+          </div>
+        )}
+      </div>
+      <div className="px-5 pb-5">
         <ShowcaseErrorBoundary>
           <Preview />
         </ShowcaseErrorBoundary>
