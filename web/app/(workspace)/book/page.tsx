@@ -48,7 +48,7 @@ export default function BookPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen w-full items-center justify-center text-[var(--muted-foreground)]">
+        <div className="flex h-full w-full items-center justify-center text-[var(--muted-foreground)]">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading…
         </div>
       }
@@ -390,7 +390,7 @@ function BookPageInner() {
   // ── Render ─────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-screen w-full">
+    <div className="flex h-full w-full">
       {view !== "list" && (
         <BookSidebar
           book={detail?.book || pendingBook || null}

@@ -64,6 +64,7 @@ pnpm dlx shadcn@latest init --preset b37bl1flo --template next
 
 | 日期 | 阶段 | 事件 |
 |---|---|---|
+| 2026-05-01 | 0.5 | ✅ 0.5.8 完成。两个收尾 slice：(a) `/chat` scrollbar 位置修复 — 拆开 body wrapper（之前把整个 messages+composer 包在 mx-auto max-w-960 里，scrollbar 出现在 viewport 中部），现 header / scroll / composer 各自 mx-auto，scroll 区域全宽，scrollbar 落在 viewport 边缘（`6868753`）。同 commit 顺手把代码块行号字号从继承的 14px 收到 12px。(b) `/book` h-screen → h-full + Suspense fallback 同改 — book 自己的 list/creator/spine/reader 多视图复杂结构保留，仅做 canonical pattern 对齐（`<NEW>`）。0.5.8 进度 6/6 ✅。Phase 0.5 整体进度 ~90%（仅剩 0.5.2 part 2 AppSidebar 合并 + 0.5.9 mobile 断点验证）。 |
 | 2026-05-01 | 0.5 | ✅ 0.5.8 第四个 slice：`/co-writer` 迁 PageBody size="wide"。Toolbar header 形式特殊（紧凑命令栏 + border-b 分割，非 in-flow PageHeader），保留原结构。清掉冗余 `bg-[var(--background)]` + `min-h-full`，文档区改 PageBody size="wide"（max-w-7xl，与 xl:grid-cols-3 断点对齐）；aria-label 改 `t()`。0.5.8 进度 4/6（剩 /chat, /book）。 |
 | 2026-05-01 | 0.5 | ✅ 0.5.8 第三个 slice：`/agents` 迁 PageBody。toast/description swap 是独有 UX，保留 inline `<header>`（不用 PageHeader 原语）但用 canonical typography（text-2xl, text-sm）。`max-w-[960px] py-8` → PageBody default（max-w-5xl px-6 py-6）。0.5.8 进度 3/6（剩 /co-writer, /chat, /book）。 |
 | 2026-05-01 | 0.5 | ✅ 0.5.8 第二个 slice：`/playground` 迁 PageBody + PageHeader（commit `491e6d7`）。单列页面，不需要 RouteFrame；外层 `<div min-h-screen bg-[var(--background)]>` → `<section aria-label overflow-y-auto>`，title 用 PageHeader（font-bold → font-semibold per canonical scale）。0.5.8 进度 2/6（剩 /agents, /co-writer, /chat, /book）。 |
