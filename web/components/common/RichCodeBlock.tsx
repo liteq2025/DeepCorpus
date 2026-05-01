@@ -146,6 +146,7 @@ export default function RichCodeBlock({
               color: lineNumberFg,
               userSelect: "none",
               opacity: 0.7,
+              fontSize: "0.75rem",
             }}
             customStyle={{
               margin: 0,

@@ -1126,9 +1126,12 @@ export default function ChatPage() {
           </button>
         </div>
       </div>
-      <div className="mx-auto flex w-full max-w-[960px] flex-1 min-h-0 flex-col overflow-hidden px-6">
-        {!hasMessages ? (
-          <div className="flex flex-1 min-h-0 flex-col items-center justify-center animate-fade-in">
+      {/* Scroll region — full width so the scrollbar sits at the viewport
+          edge (matches Claude desktop), not against the centered 960 px
+          column. Content stays centered via the inner mx-auto wrapper. */}
+      {!hasMessages ? (
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="mx-auto flex min-h-full w-full max-w-[960px] flex-col items-center justify-center px-6 animate-fade-in">
             <div className="text-center">
               <h1 className="font-serif text-[36px] font-medium tracking-[-0.01em] text-[var(--foreground)]">
                 {t("What would you like to learn?")}
@@ -1138,26 +1141,23 @@ export default function ChatPage() {
               </p>
             </div>
           </div>
-        ) : (
-          <div
-            ref={messagesContainerRef}
-            data-chat-scroll-root="true"
-            onScroll={handleMessagesScroll}
-            className={`mx-auto w-full flex-1 min-h-0 space-y-7 overflow-y-auto pr-4 [scrollbar-gutter:stable] ${hasMessages ? "pt-0" : "pt-2 pb-6"}`}
-            style={
-              hasMessages
-                ? (() => {
-                    const maskImage =
-                      "linear-gradient(to bottom, transparent 0px, #000 32px, #000 calc(100% - 40px), transparent 100%)";
-                    return {
-                      paddingBottom: "4px",
-                      WebkitMaskImage: maskImage,
-                      maskImage,
-                    };
-                  })()
-                : undefined
-            }
-          >
+        </div>
+      ) : (
+        <div
+          ref={messagesContainerRef}
+          data-chat-scroll-root="true"
+          onScroll={handleMessagesScroll}
+          className="flex-1 min-h-0 overflow-y-auto [scrollbar-gutter:stable]"
+          style={(() => {
+            const maskImage =
+              "linear-gradient(to bottom, transparent 0px, #000 32px, #000 calc(100% - 40px), transparent 100%)";
+            return {
+              WebkitMaskImage: maskImage,
+              maskImage,
+            };
+          })()}
+        >
+          <div className="mx-auto w-full max-w-[960px] space-y-7 px-6 pb-1">
             <ChatMessageList
               messages={state.messages}
               isStreaming={state.isStreaming}
@@ -1171,8 +1171,10 @@ export default function ChatPage() {
             />
             <div ref={messagesEndRef} className="h-px w-full shrink-0" />
           </div>
-        )}
+        </div>
+      )}
 
+      <div className="mx-auto w-full max-w-[960px] shrink-0 px-6">
         <ChatComposer
           composerRef={composerRef}
           capMenuRef={capMenuRef}
