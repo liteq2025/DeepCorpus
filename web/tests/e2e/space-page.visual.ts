@@ -8,7 +8,8 @@ const BASE_URL =
 // Visual regression for the /space sub-routes (Phase 0.5.8 first slice).
 // /space redirects to /space/notebooks, which exercises:
 //   - the new RouteFrame + PageBody composition in space/layout.tsx
-//   - SpaceMiniNav as the secondary nav
+//   - SpaceMiniNav as the secondary nav (ListPane-based; see
+//     components/space/SpaceMiniNav.tsx for the Layer 2 alignment)
 //   - NotebooksSection rendering
 //
 // Empty-state snapshot if no backend; backend-driven content if connected.

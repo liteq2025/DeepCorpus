@@ -6,11 +6,12 @@ import { useTranslation } from "react-i18next";
 import {
   Brain,
   ClipboardList,
-  LayoutGrid,
   NotebookPen,
   Wand2,
   type LucideIcon,
 } from "lucide-react";
+
+import { ListPane } from "@/components/layout";
 
 interface SpaceNavEntry {
   href: string;
@@ -23,7 +24,8 @@ const SPACE_NAV: SpaceNavEntry[] = [
   {
     href: "/space/notebooks",
     label: "Notebooks",
-    description: "Organize saved outputs from chat, research, Co-Writer, and more.",
+    description:
+      "Organize saved outputs from chat, research, Co-Writer, and more.",
     icon: NotebookPen,
   },
   {
@@ -46,63 +48,55 @@ const SPACE_NAV: SpaceNavEntry[] = [
   },
 ];
 
+/**
+ * Layer 2 — secondary nav for /space sub-routes.
+ *
+ * Composes `<ListPane>` so /space matches /knowledge's chrome (bg, width,
+ * collapse, persistence) and the canonical Layer 2 typography. The
+ * one-off branding header (LayoutGrid badge + "Space" + tagline) was
+ * dropped: AppSidebar already brought the user here, and ListPane's
+ * title carries the section name on its own.
+ */
 export default function SpaceMiniNav() {
   const pathname = usePathname();
   const { t } = useTranslation();
 
   return (
-    <aside className="flex h-full w-[224px] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--card)]">
-      <div className="flex items-start gap-2.5 border-b border-[var(--border)]/60 px-4 pb-4 pt-5">
-        <span
-          aria-hidden
-          className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[var(--border)]/70 bg-[var(--background)] text-[var(--foreground)]"
-        >
-          <LayoutGrid size={13} strokeWidth={1.6} />
-        </span>
-        <div className="min-w-0">
-          {/* Phase 0.5.8: SpaceMiniNav is a navigation aside, not the
-              page primary heading. Demoted from <h1> to <h2> so each
-              /space sub-route owns its single <h1> via PageHeader (or
-              the legacy SpaceSectionHeader). */}
-          <h2 className="text-[14.5px] font-semibold leading-tight tracking-tight text-[var(--foreground)]">
-            {t("Space")}
-          </h2>
-          <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--muted-foreground)]">
-            {t(
-              "Your personal library of notebooks, questions, playbooks, and memory.",
-            )}
-          </p>
-        </div>
-      </div>
-
-      <nav className="flex-1 space-y-1 px-2 py-3">
+    <ListPane
+      id="space-nav"
+      title={t("Space")}
+      collapsedContent={<SpaceMiniNavCollapsed pathname={pathname} />}
+    >
+      <nav aria-label={t("Space sub-routes")} className="space-y-0.5 px-1 pt-1">
         {SPACE_NAV.map(({ href, label, description, icon: Icon }) => {
           const active = pathname.startsWith(href);
           return (
             <Link
               key={href}
               href={href}
-              className={`group block rounded-xl px-2.5 py-2 transition-colors ${
+              aria-current={active ? "page" : undefined}
+              className={`group block rounded-lg border px-2.5 py-2 transition-colors ${
                 active
-                  ? "bg-[var(--background)]/70 text-[var(--foreground)] shadow-sm ring-1 ring-[var(--border)]/80"
-                  : "text-[var(--muted-foreground)] hover:bg-[var(--muted)]/40 hover:text-[var(--foreground)]"
+                  ? "border-[var(--primary)]/40 bg-[var(--primary)]/8"
+                  : "border-transparent hover:border-[var(--border)] hover:bg-[var(--muted)]/40"
               }`}
             >
-              <div className="flex items-start gap-2.5">
-                <span
-                  className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border transition-colors ${
+              <div className="flex items-start gap-2">
+                <Icon
+                  size={14}
+                  strokeWidth={active ? 2 : 1.6}
+                  className={`mt-0.5 shrink-0 ${
                     active
-                      ? "border-[var(--border)] bg-[var(--card)] text-[var(--foreground)]"
-                      : "border-[var(--border)]/50 bg-[var(--background)]/40 text-[var(--muted-foreground)] group-hover:border-[var(--border)]/80 group-hover:text-[var(--foreground)]"
+                      ? "text-[var(--foreground)]"
+                      : "text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]"
                   }`}
-                >
-                  <Icon size={12} strokeWidth={active ? 1.9 : 1.5} />
-                </span>
-                <div className="min-w-0">
-                  <div className="text-[12.5px] font-medium leading-tight tracking-tight">
+                  aria-hidden
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="text-[13px] font-medium leading-tight text-[var(--foreground)]">
                     {t(label)}
                   </div>
-                  <p className="mt-0.5 line-clamp-2 text-[10.5px] leading-snug text-[var(--muted-foreground)]/80">
+                  <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-[var(--muted-foreground)]">
                     {t(description)}
                   </p>
                 </div>
@@ -111,6 +105,41 @@ export default function SpaceMiniNav() {
           );
         })}
       </nav>
-    </aside>
+    </ListPane>
+  );
+}
+
+/**
+ * Icon-strip rendering for the collapsed `<ListPane>` state. Mirrors
+ * `KnowledgeBaseListCollapsed` in shape so the two Layer 2 consumers
+ * feel uniform when the pane is folded.
+ */
+function SpaceMiniNavCollapsed({ pathname }: { pathname: string }) {
+  const { t } = useTranslation();
+  return (
+    <nav
+      aria-label={t("Space sub-routes")}
+      className="flex h-full flex-col items-center gap-1 py-2"
+    >
+      {SPACE_NAV.map(({ href, label, icon: Icon }) => {
+        const active = pathname.startsWith(href);
+        return (
+          <Link
+            key={href}
+            href={href}
+            title={t(label)}
+            aria-label={t(label)}
+            aria-current={active ? "page" : undefined}
+            className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${
+              active
+                ? "border-[var(--primary)]/40 bg-[var(--primary)]/10 text-[var(--foreground)]"
+                : "border-transparent text-[var(--muted-foreground)] hover:bg-[var(--muted)]/50 hover:text-[var(--foreground)]"
+            }`}
+          >
+            <Icon size={14} strokeWidth={active ? 2 : 1.6} aria-hidden />
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
