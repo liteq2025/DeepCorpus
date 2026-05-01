@@ -1,45 +1,20 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
 import { SidebarShell } from "@/components/sidebar/SidebarShell";
+import { useSessionList } from "@/components/sidebar/useSessionList";
 import { useAppShell } from "@/context/AppShellContext";
 import { useConfirm } from "@/components/layout";
-import {
-  deleteSession,
-  listSessions,
-  updateSessionTitle,
-  type SessionSummary,
-} from "@/lib/session-api";
+import { deleteSession } from "@/lib/session-api";
 
 export default function UtilitySidebar() {
   const { t } = useTranslation();
   const confirm = useConfirm();
-
   const router = useRouter();
   const { activeSessionId, setActiveSessionId } = useAppShell();
-  const [sessions, setSessions] = useState<SessionSummary[]>([]);
-  const [loadingSessions, setLoadingSessions] = useState(false);
-  const hasLoadedSessionsRef = useRef(false);
-
-  const refreshSessions = useCallback(async () => {
-    if (!hasLoadedSessionsRef.current) {
-      setLoadingSessions(true);
-    }
-    try {
-      setSessions(await listSessions(50, 0, { force: true }));
-      hasLoadedSessionsRef.current = true;
-    } catch (error) {
-      console.error("Failed to load sessions", error);
-    } finally {
-      setLoadingSessions(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void refreshSessions();
-  }, [refreshSessions]);
+  const { sessions, loading, rename, removeFromList } = useSessionList();
 
   const handleNewChat = useCallback(() => {
     setActiveSessionId(null);
@@ -54,36 +29,22 @@ export default function UtilitySidebar() {
     [router, setActiveSessionId],
   );
 
-  const handleRenameSession = useCallback(
-    async (sessionId: string, title: string) => {
-      const updated = await updateSessionTitle(sessionId, title);
-      setSessions((prev) =>
-        prev.map((session) =>
-          session.session_id === sessionId
-            ? {
-                ...session,
-                title: updated.title,
-                updated_at: updated.updated_at,
-              }
-            : session,
-        ),
-      );
-    },
-    [],
-  );
-
   const handleDeleteSession = useCallback(
     async (sessionId: string) => {
-      if (!(await confirm({ title: t("Delete this chat history?"), destructive: true }))) return;
+      if (
+        !(await confirm({
+          title: t("Delete this chat history?"),
+          destructive: true,
+        }))
+      )
+        return;
       await deleteSession(sessionId);
-      setSessions((prev) =>
-        prev.filter((session) => session.session_id !== sessionId),
-      );
+      removeFromList(sessionId);
       if (activeSessionId === sessionId) {
         setActiveSessionId(null);
       }
     },
-    [activeSessionId, setActiveSessionId],
+    [activeSessionId, confirm, removeFromList, setActiveSessionId, t],
   );
 
   return (
@@ -91,10 +52,10 @@ export default function UtilitySidebar() {
       showSessions
       sessions={sessions}
       activeSessionId={activeSessionId}
-      loadingSessions={loadingSessions}
+      loadingSessions={loading}
       onNewChat={handleNewChat}
       onSelectSession={handleSelectSession}
-      onRenameSession={handleRenameSession}
+      onRenameSession={rename}
       onDeleteSession={handleDeleteSession}
     />
   );
