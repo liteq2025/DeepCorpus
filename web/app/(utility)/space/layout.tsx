@@ -1,3 +1,4 @@
+import { PageBody, RouteFrame } from "@/components/layout";
 import SpaceMiniNav from "@/components/space/SpaceMiniNav";
 
 export default function SpaceLayout({
@@ -5,18 +6,18 @@ export default function SpaceLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // The parent (utility) layout already provides the <main> landmark.
-  // This nested layout uses a <section> instead so we don't violate the
-  // single-<main>-per-document rule. Phase 0.5.1.
+  // Phase 0.5.8: composes the layout primitives instead of inline flex.
+  // The parent (utility) layout already provides the <main> landmark, so
+  // the central area is a <section> per the RouteFrame convention.
   return (
-    <div className="flex h-full overflow-hidden">
+    <RouteFrame>
       <SpaceMiniNav />
       <section
-        aria-label="Workspace section"
+        aria-label="Space content"
         className="flex-1 overflow-y-auto [scrollbar-gutter:stable]"
       >
-        <div className="mx-auto max-w-5xl px-8 py-8 pb-12">{children}</div>
+        <PageBody size="default">{children}</PageBody>
       </section>
-    </div>
+    </RouteFrame>
   );
 }

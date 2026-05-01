@@ -60,9 +60,13 @@ export default function SpaceMiniNav() {
           <LayoutGrid size={13} strokeWidth={1.6} />
         </span>
         <div className="min-w-0">
-          <h1 className="text-[14.5px] font-semibold leading-tight tracking-tight text-[var(--foreground)]">
+          {/* Phase 0.5.8: SpaceMiniNav is a navigation aside, not the
+              page primary heading. Demoted from <h1> to <h2> so each
+              /space sub-route owns its single <h1> via PageHeader (or
+              the legacy SpaceSectionHeader). */}
+          <h2 className="text-[14.5px] font-semibold leading-tight tracking-tight text-[var(--foreground)]">
             {t("Space")}
-          </h1>
+          </h2>
           <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--muted-foreground)]">
             {t(
               "Your personal library of notebooks, questions, playbooks, and memory.",
