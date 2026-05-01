@@ -1,3 +1,9 @@
+/* Project pins Tailwind v3.4 (PLAN.md §5 — v4 upgrade is intentionally
+   out-of-scope). shadcn 4.x init injects `@import "shadcn/tailwind.css"`
+   (file does not exist on v3) and `@import "tw-animate-css"` (v4-only
+   utilities) — both removed. The animations required by Sheet/Dialog will
+   be wired via `tailwindcss-animate` plugin when those primitives land
+   in Phase 0.4. */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,48 +11,75 @@
 @layer base {
   :root {
     color-scheme: light;
-    --background: #faf9f6;
-    --foreground: #1f1d1b;
-    --card: #ffffff;
-    --card-foreground: #1f1d1b;
-    --popover: #ffffff;
-    --popover-foreground: #1f1d1b;
-    --primary: #b0501e;
-    --primary-foreground: #ffffff;
-    --secondary: #ece7dd;
-    --secondary-foreground: #1f1d1b;
-    --muted: #ece7dd;
-    --muted-foreground: #6b655f;
-    --accent: #ece7dd;
-    --accent-foreground: #1f1d1b;
-    --destructive: #c53a2c;
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.147 0.004 49.3);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.147 0.004 49.3);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.147 0.004 49.3);
+    --primary: oklch(0.457 0.24 277.023);
+    --primary-foreground: oklch(0.962 0.018 272.314);
+    --secondary: oklch(0.967 0.001 286.375);
+    --secondary-foreground: oklch(0.21 0.006 285.885);
+    --muted: oklch(0.96 0.002 17.2);
+    --muted-foreground: oklch(0.547 0.021 43.1);
+    --accent: oklch(0.96 0.002 17.2);
+    --accent-foreground: oklch(0.214 0.009 43.1);
+    --destructive: oklch(0.577 0.245 27.325);
     --destructive-foreground: #ffffff;
-    --border: #dbd4c8;
-    --input: #dbd4c8;
-    --ring: #b0501e;
+    --border: oklch(0.922 0.005 34.3);
+    --input: oklch(0.922 0.005 34.3);
+    --ring: oklch(0.714 0.014 41.2);
+    --chart-1: oklch(0.785 0.115 274.713);
+    --chart-2: oklch(0.585 0.233 277.117);
+    --chart-3: oklch(0.511 0.262 276.966);
+    --chart-4: oklch(0.457 0.24 277.023);
+    --chart-5: oklch(0.398 0.195 277.366);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.986 0.002 67.8);
+    --sidebar-foreground: oklch(0.147 0.004 49.3);
+    --sidebar-primary: oklch(0.511 0.262 276.966);
+    --sidebar-primary-foreground: oklch(0.962 0.018 272.314);
+    --sidebar-accent: oklch(0.96 0.002 17.2);
+    --sidebar-accent-foreground: oklch(0.214 0.009 43.1);
+    --sidebar-border: oklch(0.922 0.005 34.3);
+    --sidebar-ring: oklch(0.714 0.014 41.2);
   }
 
   .dark {
     color-scheme: dark;
-    --background: #1a1918;
-    --foreground: #e8e4de;
-    --card: #242220;
-    --card-foreground: #e8e4de;
-    --popover: #242220;
-    --popover-foreground: #e8e4de;
-    --primary: #d4734b;
-    --primary-foreground: #1a1918;
-    --secondary: #2a2725;
-    --secondary-foreground: #e8e4de;
-    --muted: #2a2725;
-    --muted-foreground: #9b9590;
-    --accent: #302d2a;
-    --accent-foreground: #e8e4de;
-    --destructive: #d44a3c;
+    --background: oklch(0.147 0.004 49.3);
+    --foreground: oklch(0.986 0.002 67.8);
+    --card: oklch(0.214 0.009 43.1);
+    --card-foreground: oklch(0.986 0.002 67.8);
+    --popover: oklch(0.214 0.009 43.1);
+    --popover-foreground: oklch(0.986 0.002 67.8);
+    --primary: oklch(0.398 0.195 277.366);
+    --primary-foreground: oklch(0.962 0.018 272.314);
+    --secondary: oklch(0.274 0.006 286.033);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.268 0.011 36.5);
+    --muted-foreground: oklch(0.714 0.014 41.2);
+    --accent: oklch(0.268 0.011 36.5);
+    --accent-foreground: oklch(0.986 0.002 67.8);
+    --destructive: oklch(0.704 0.191 22.216);
     --destructive-foreground: #ffffff;
-    --border: #3a3634;
-    --input: #3a3634;
-    --ring: #d4734b;
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.547 0.021 43.1);
+    --chart-1: oklch(0.785 0.115 274.713);
+    --chart-2: oklch(0.585 0.233 277.117);
+    --chart-3: oklch(0.511 0.262 276.966);
+    --chart-4: oklch(0.457 0.24 277.023);
+    --chart-5: oklch(0.398 0.195 277.366);
+    --sidebar: oklch(0.214 0.009 43.1);
+    --sidebar-foreground: oklch(0.986 0.002 67.8);
+    --sidebar-primary: oklch(0.585 0.233 277.117);
+    --sidebar-primary-foreground: oklch(0.962 0.018 272.314);
+    --sidebar-accent: oklch(0.268 0.011 36.5);
+    --sidebar-accent-foreground: oklch(0.986 0.002 67.8);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.547 0.021 43.1);
   }
 
   .theme-snow {
@@ -125,7 +158,10 @@
   }
 
   * {
-    @apply border-[color:var(--border)];
+    /* `@apply border-border outline-ring/50` (shadcn 4.x default) uses Tailwind
+       v4 alpha-modifier syntax that v3 cannot parse. Inline equivalent: */
+    border-color: var(--border);
+    outline-color: color-mix(in oklch, var(--ring) 50%, transparent);
     scrollbar-width: thin;
     scrollbar-color: var(--border) transparent;
   }
@@ -138,6 +174,7 @@
 
   html {
     -webkit-font-smoothing: antialiased;
+    @apply font-sans;
   }
 
   html[data-scroll-behavior="smooth"] {
@@ -145,7 +182,7 @@
   }
 
   body {
-    @apply antialiased;
+    @apply antialiased bg-background text-foreground;
     background: var(--background);
     color: var(--foreground);
   }
@@ -159,6 +196,10 @@
 
   summary::-webkit-details-marker {
     display: none;
+  }
+  .theme {
+    --font-heading: var(--font-sans);
+    --font-sans: var(--font-sans);
   }
 }
 

@@ -4,7 +4,13 @@ import "./globals.css";
 import ThemeScript from "@/components/ThemeScript";
 import { AppShellProvider } from "@/context/AppShellContext";
 import { I18nClientBridge } from "@/i18n/I18nClientBridge";
+import { cn } from "@/lib/utils";
 
+// Fork override: shadcn preset b37bl1flo wants Inter, but we keep Plus Jakarta
+// Sans to preserve the existing visual identity. Lora remains the serif accent
+// for special headings (e.g. chat home hero). Both are exposed as CSS vars
+// (--font-sans, --font-serif) so Tailwind / shadcn token consumers see them
+// transparently.
 const fontSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
   display: "swap",
@@ -39,7 +45,7 @@ export default function RootLayout({
       lang="en"
       suppressHydrationWarning
       data-scroll-behavior="smooth"
-      className={`${fontSans.variable} ${fontSerif.variable}`}
+      className={cn(fontSans.variable, fontSerif.variable, "font-sans")}
     >
       <head>
         <ThemeScript />
