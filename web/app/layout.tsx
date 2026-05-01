@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Lora } from "next/font/google";
 import "./globals.css";
 import ThemeScript from "@/components/ThemeScript";
 import { AppShellProvider } from "@/context/AppShellContext";
+import { LayoutProvider } from "@/components/layout";
 import { I18nClientBridge } from "@/i18n/I18nClientBridge";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +53,9 @@ export default function RootLayout({
       </head>
       <body className="font-sans bg-[var(--background)] text-[var(--foreground)]">
         <AppShellProvider>
-          <I18nClientBridge>{children}</I18nClientBridge>
+          <LayoutProvider>
+            <I18nClientBridge>{children}</I18nClientBridge>
+          </LayoutProvider>
         </AppShellProvider>
       </body>
     </html>
