@@ -23,5 +23,24 @@ export default defineConfig({
       testMatch: "**/*.audit.ts",
       use: { ...devices["Desktop Chrome"] },
     },
+    {
+      name: "smoke",
+      testMatch: "**/*.smoke.ts",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
+      name: "visual",
+      testMatch: "**/*.visual.ts",
+      // Pin viewport so snapshots are reproducible across machines.
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1440, height: 900 },
+      },
+      // Screenshots are platform-specific; use a small diff tolerance to
+      // absorb sub-pixel font/AA differences across runs.
+      expect: {
+        toHaveScreenshot: { maxDiffPixelRatio: 0.005 },
+      },
+    },
   ],
 });

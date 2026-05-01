@@ -564,10 +564,32 @@ function GroupNav({
   );
 }
 
-export default function DevDashboard() {
+/** Map a `?view=` query value to a sidebar entry id. */
+function resolveInitialView(view: string | undefined): string {
+  switch (view) {
+    case "showcase":
+      return SHOWCASE_ID;
+    case "gallery":
+      return GALLERY_ID;
+    case "tree":
+      return TREE_ID;
+    default:
+      // Allow any registered group id (e.g. ?view=stack) for direct linking.
+      if (view && DEV_REGISTRY.some((g) => g.id === view)) return view;
+      return SHOWCASE_ID;
+  }
+}
+
+export default function DevDashboard({
+  initialView,
+}: {
+  initialView?: string;
+}) {
   const componentsGroup =
     DEV_REGISTRY.find((g) => g.id === "components") ?? DEV_REGISTRY[0];
-  const [selectedId, setSelectedId] = useState<string>(SHOWCASE_ID);
+  const [selectedId, setSelectedId] = useState<string>(() =>
+    resolveInitialView(initialView),
+  );
 
   const isShowcase = selectedId === SHOWCASE_ID;
   const isGallery = selectedId === GALLERY_ID;

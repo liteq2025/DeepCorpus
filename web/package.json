@@ -11,6 +11,8 @@
     "test:node": "node ./scripts/run-node-tests.mjs",
     "test:component": "vitest run",
     "test:component:watch": "vitest",
+    "test:visual": "playwright test --project=visual",
+    "test:visual:update": "playwright test --project=visual --update-snapshots",
     "perf:check": "node ./scripts/route_budgets.mjs",
     "build:perf": "npm run build && npm run perf:check",
     "i18n:parity": "node ./scripts/i18n_parity.mjs",

@@ -75,6 +75,12 @@ node_modules/
 # Next.js build output
 .next/
 web/.next/
+
+# Playwright artifacts (reports, traces, intermediate run outputs).
+# The test files (*.smoke.ts, *.visual.ts, *.audit.ts) and committed
+# snapshot baselines under *-snapshots/ are kept; ephemeral run output is not.
+web/playwright-report/
+web/test-results/
 out/
 web/out/
 
