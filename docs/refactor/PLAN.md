@@ -21,7 +21,7 @@
 | **0.5** | Layout 标准化（9 层栈 + sheet-first） | ✅ completed | 6 天 | 所有 routes 用 layout 原语组合（5 routes via PageBody/PageHeader/RouteFrame，/chat 走 layout 修复）、7 个 Modal → Sheet，15 个 `window.confirm()` → AlertDialog，sidebar 共享 hook，mobile smoke project + breakpoints 文档落地 | [phase-0.5-layout.md](./phase-0.5-layout.md) |
 | **1** | FE↔BE WS 契约 codegen | ✅ completed | 1 天 | `make types` 跑通；CI 检测漂移 | [phase-1-ws-contract.md](./phase-1-ws-contract.md) |
 | **2** | 拆 5 个 mega-page | 🟡 in-progress | 2 周 | 9,388 行（实测）→ ≤ 4,000 行，单文件 ≤ 600 行 | [phase-2-megapages.md](./phase-2-megapages.md) |
-| **3** | 命名 / 边界文档收尾 | 🟡 in-progress | 2 天 | `KnowledgePage` 物理位置归位；STYLE.md 落地 | [phase-3-naming.md](./phase-3-naming.md) |
+| **3** | 命名 / 边界文档收尾 | ✅ completed | 2 天 | `KnowledgePage` 物理位置归位；STYLE.md 落地 | [phase-3-naming.md](./phase-3-naming.md) · [STYLE.md](./STYLE.md) |
 
 **状态图例**：⏳ pending · 🟡 in-progress · ✅ completed · ❌ blocked
 
