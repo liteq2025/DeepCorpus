@@ -20,7 +20,8 @@ export type StreamEventType =
   | "result"
   | "error"
   | "session"
-  | "done";
+  | "done"
+  | "llm_call";
 
 export interface StreamEvent {
   type: StreamEventType;

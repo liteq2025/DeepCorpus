@@ -30,6 +30,11 @@ class StreamEventType(str, Enum):
     ERROR = "error"
     SESSION = "session"
     DONE = "done"
+    # Per-LLM-call telemetry. Emitted right after each provider response
+    # returns. metadata carries: stage, capability, model, prompt_tokens,
+    # completion_tokens, total_tokens, duration_ms, calls_so_far. Drives
+    # the dev-mode LLM trace panel — does not affect runtime behavior.
+    LLM_CALL = "llm_call"
 
 
 @dataclass

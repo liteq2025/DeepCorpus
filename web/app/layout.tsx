@@ -3,7 +3,9 @@ import { Plus_Jakarta_Sans, Lora } from "next/font/google";
 import "./globals.css";
 import ThemeScript from "@/components/ThemeScript";
 import { AppShellProvider } from "@/context/AppShellContext";
+import { LlmTraceProvider } from "@/context/LlmTraceContext";
 import { ConfirmProvider, LayoutProvider } from "@/components/layout";
+import { LlmTracePanel } from "@/components/dev/LlmTracePanel";
 import { Toaster } from "@/components/ui/sonner";
 import { I18nClientBridge } from "@/i18n/I18nClientBridge";
 import { cn } from "@/lib/utils";
@@ -55,9 +57,17 @@ export default function RootLayout({
       <body className="font-sans bg-[var(--background)] text-[var(--foreground)]">
         <AppShellProvider>
           <LayoutProvider>
-            <ConfirmProvider>
-              <I18nClientBridge>{children}</I18nClientBridge>
-            </ConfirmProvider>
+            <LlmTraceProvider>
+              <ConfirmProvider>
+                <I18nClientBridge>{children}</I18nClientBridge>
+              </ConfirmProvider>
+              {/*
+                Floating dev-mode telemetry button + sheet. Self-gates on
+                enabled state (default ON in dev, OFF in prod). Sits above
+                everything else thanks to z-toast.
+              */}
+              <LlmTracePanel />
+            </LlmTraceProvider>
           </LayoutProvider>
         </AppShellProvider>
         <Toaster richColors closeButton />

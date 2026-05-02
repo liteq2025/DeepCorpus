@@ -19,6 +19,7 @@ import { UnifiedWSClient } from "@/lib/unified-ws";
 import { getSession, type SessionMessage } from "@/lib/session-api";
 import { normalizeMarkdownForDisplay } from "@/lib/markdown-display";
 import { shouldAppendEventContent } from "@/lib/stream";
+import { useLlmTrace } from "@/context/LlmTraceContext";
 
 type SessionRuntimeStatus =
   | "idle"
@@ -513,6 +514,11 @@ export function UnifiedChatProvider({
 }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const stateRef = useRef(initialState);
+  const llmTrace = useLlmTrace();
+  const llmTraceRef = useRef(llmTrace);
+  useLayoutEffect(() => {
+    llmTraceRef.current = llmTrace;
+  }, [llmTrace]);
   const runnersRef = useRef<
     Map<
       string,
@@ -627,6 +633,12 @@ export function UnifiedChatProvider({
         runner?.client.disconnect();
         runnersRef.current.delete(effectiveKey);
         return;
+      }
+      // Mirror llm_call events into the global dev trace store so the
+      // floating telemetry panel can show per-call breakdowns. Other event
+      // types still land in the chat reducer below.
+      if (event.type === "llm_call") {
+        llmTraceRef.current.recordEvent(event);
       }
       dispatch({ type: "STREAM_EVENT", key: effectiveKey, event });
       if (

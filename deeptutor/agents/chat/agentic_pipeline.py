@@ -282,7 +282,10 @@ class AgenticChatPipeline:
 
             chunks: list[str] = []
             async for chunk in self._stream_messages(
-                messages, max_tokens=self._chat_limits.thinking
+                messages,
+                max_tokens=self._chat_limits.thinking,
+                stream=stream,
+                stage="thinking",
             ):
                 if not chunk:
                     continue
@@ -380,7 +383,10 @@ class AgenticChatPipeline:
 
             chunks: list[str] = []
             async for chunk in self._stream_messages(
-                messages, max_tokens=self._chat_limits.observing
+                messages,
+                max_tokens=self._chat_limits.observing,
+                stream=stream,
+                stage="observing",
             ):
                 if not chunk:
                     continue
@@ -445,7 +451,10 @@ class AgenticChatPipeline:
 
             chunks: list[str] = []
             async for chunk in self._stream_messages(
-                messages, max_tokens=self._chat_limits.responding
+                messages,
+                max_tokens=self._chat_limits.responding,
+                stream=stream,
+                stage="responding",
             ):
                 if not chunk:
                     continue
@@ -556,7 +565,10 @@ class AgenticChatPipeline:
 
             chunks: list[str] = []
             async for chunk in self._stream_messages(
-                messages, max_tokens=self._chat_limits.answer_now
+                messages,
+                max_tokens=self._chat_limits.answer_now,
+                stream=stream,
+                stage="answer_now",
             ):
                 if not chunk:
                     continue
@@ -612,6 +624,9 @@ class AgenticChatPipeline:
                 {"trace_kind": "call_status", "call_state": "running"},
             ),
         )
+        import time as _time
+
+        _acting_started = _time.time()
         response = await client.chat.completions.create(
             model=self.model,
             messages=messages,
@@ -620,6 +635,20 @@ class AgenticChatPipeline:
             **self._completion_kwargs(max_tokens=self._chat_limits.acting),
         )
         self._accumulate_usage(response)
+        _usage = getattr(response, "usage", None)
+        await stream.llm_call(
+            stage="acting",
+            capability="chat",
+            model=self.model,
+            binding=self.binding,
+            prompt_tokens=int(getattr(_usage, "prompt_tokens", 0) or 0),
+            completion_tokens=int(getattr(_usage, "completion_tokens", 0) or 0),
+            duration_ms=int((_time.time() - _acting_started) * 1000),
+            usage_kind="exact",
+            source="chat",
+            metadata={"tool_call_count": len(getattr(response.choices[0].message, "tool_calls", None) or [])
+                     if response.choices else 0},
+        )
         if not response.choices:
             return tool_traces
 
@@ -989,7 +1018,14 @@ class AgenticChatPipeline:
         self,
         messages: list[dict[str, Any]],
         max_tokens: int,
+        *,
+        stream: StreamBus | None = None,
+        stage: str = "",
+        capability: str = "chat",
     ):
+        import time as _time
+
+        started = _time.time()
         output_chars = 0
         async for chunk in llm_stream(
             prompt="",
@@ -1011,6 +1047,18 @@ class AgenticChatPipeline:
         self._usage["completion_tokens"] += est_output
         self._usage["total_tokens"] += est_input + est_output
         self._usage["calls"] += 1
+        if stream is not None and stage:
+            await stream.llm_call(
+                stage=stage,
+                capability=capability,
+                model=self.model,
+                binding=self.binding,
+                prompt_tokens=est_input,
+                completion_tokens=est_output,
+                duration_ms=int((_time.time() - started) * 1000),
+                usage_kind="estimated",
+                source=capability,
+            )
 
     def _build_openai_client(self):
         http_client = None

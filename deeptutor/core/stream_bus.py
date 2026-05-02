@@ -206,6 +206,50 @@ class StreamBus:
             )
         )
 
+    async def llm_call(
+        self,
+        *,
+        stage: str,
+        capability: str,
+        model: str,
+        binding: str = "",
+        prompt_tokens: int = 0,
+        completion_tokens: int = 0,
+        duration_ms: int = 0,
+        usage_kind: str = "exact",
+        source: str = "",
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Emit a per-LLM-call telemetry event for the dev trace panel.
+
+        ``usage_kind`` is "exact" when prompt/completion came from the
+        provider's response.usage, "estimated" when the streaming path
+        had to approximate from char counts. Lets the UI flag estimates
+        so the user knows when to trust the number.
+        """
+        await self.emit(
+            StreamEvent(
+                type=StreamEventType.LLM_CALL,
+                source=source or capability,
+                stage=stage,
+                metadata=merge_trace_metadata(
+                    {
+                        "stage": stage,
+                        "capability": capability,
+                        "model": model,
+                        "binding": binding,
+                        "prompt_tokens": prompt_tokens,
+                        "completion_tokens": completion_tokens,
+                        "total_tokens": prompt_tokens + completion_tokens,
+                        "duration_ms": duration_ms,
+                        "usage_kind": usage_kind,
+                    },
+                    metadata,
+                ),
+            )
+        )
+
     async def sources(
         self,
         sources: list[dict[str, Any]],
