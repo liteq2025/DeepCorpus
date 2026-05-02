@@ -34,12 +34,17 @@ import {
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { ListPane, RouteFrame, useConfirm } from "@/components/layout";
+import {
+  ListPane,
+  Onboarding,
+  RouteFrame,
+  useConfirm,
+  type OnboardingStep,
+} from "@/components/layout";
 import { writeStoredLanguage } from "@/context/app-shell-storage";
 import { apiUrl } from "@/lib/api";
 import { setTheme as applyThemePreference } from "@/lib/theme";
 import {
-  TOUR_GUIDE_STEPS,
   cloneCatalog,
   defaultCatalog,
   deprecatedSearchProviders,
@@ -63,7 +68,6 @@ import {
   type UiSettings,
 } from "@/lib/settings-helpers";
 import { DimensionField } from "@/components/settings/DimensionField";
-import { SpotlightOverlay } from "@/components/settings/SpotlightOverlay";
 
 function serviceIcon(service: ServiceName) {
   if (service === "llm") return <Brain className="h-3.5 w-3.5" />;
@@ -249,6 +253,7 @@ function SectionsNav({
                   type="button"
                   onClick={() => onSelect(id)}
                   aria-current={active ? "page" : undefined}
+                  data-onboarding={isService ? `nav-${id}` : undefined}
                   className={`group flex w-full items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors ${
                     active
                       ? "border-[var(--primary)]/40 bg-[var(--primary)]/8"
@@ -433,16 +438,6 @@ function SettingsPageContent() {
     draft.services.embedding.active_profile_id,
     draft.services.search.active_profile_id,
   ]);
-
-  // -- Tour guide auto-switch active service tab --------------------------
-
-  useEffect(() => {
-    const currentStep = TOUR_GUIDE_STEPS[tourGuideStep];
-    if (currentStep?.service) {
-      setActiveService(currentStep.service);
-      setActiveSection(currentStep.service);
-    }
-  }, [tourGuideStep]);
 
   const selectSection = useCallback((section: Section) => {
     setActiveSection(section);
@@ -870,6 +865,37 @@ function SettingsPageContent() {
     setTourGuideStep(0);
   }, []);
 
+  const tourSteps = useMemo<OnboardingStep[]>(
+    () => [
+      {
+        target: '[data-onboarding="nav-llm"]',
+        title: t("settingsTour.pickService.title"),
+        description: t("settingsTour.pickService.desc"),
+        prepare: () => selectSection("llm"),
+        placement: "bottom",
+      },
+      {
+        target: '[data-onboarding="add-profile"]',
+        title: t("settingsTour.addProfile.title"),
+        description: t("settingsTour.addProfile.desc"),
+        prepare: () => selectSection("llm"),
+      },
+      {
+        target: '[data-onboarding="run-test"]',
+        title: t("settingsTour.runTest.title"),
+        description: t("settingsTour.runTest.desc"),
+        prepare: () => selectSection("llm"),
+      },
+      {
+        target: '[data-onboarding="apply"]',
+        title: t("settingsTour.apply.title"),
+        description: t("settingsTour.apply.desc"),
+        placement: "top",
+      },
+    ],
+    [t, selectSection],
+  );
+
   // ═══════════════════════════════════════════════════════════════════════
   // Render
   // ═══════════════════════════════════════════════════════════════════════
@@ -923,65 +949,80 @@ function SettingsPageContent() {
       <div className="mx-auto w-full max-w-[960px] flex-1 px-6 py-8">
         {activeSection === "preferences" && (
         <div className="space-y-6">
-          <div className="flex items-center gap-2">
-            <span className="text-[12px] text-[var(--muted-foreground)]">
-              {t("Theme")}
-            </span>
-            <div className="flex gap-0.5 rounded-lg bg-[var(--muted)] p-0.5">
-              {(["light", "dark"] as const).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => updateTheme(v)}
-                  className={`rounded-md px-2.5 py-1 text-[12px] transition-all ${
-                    theme === v
-                      ? "bg-[var(--card)] font-medium text-[var(--foreground)] shadow-sm"
-                      : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                  }`}
-                >
-                  {v === "light" ? t("Light") : t("Dark")}
-                </button>
-              ))}
+          <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]">
+            <div className="flex items-center justify-between gap-6 px-5 py-4">
+              <div className="min-w-0">
+                <div className="text-[13px] font-medium text-[var(--foreground)]">
+                  {t("Theme")}
+                </div>
+                <p className="mt-0.5 text-[12px] text-[var(--muted-foreground)]">
+                  {t("Use a light or dark color scheme.")}
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-0.5 rounded-lg bg-[var(--muted)] p-0.5">
+                {(["light", "dark"] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => updateTheme(v)}
+                    className={`rounded-md px-2.5 py-1 text-[12px] transition-all ${
+                      theme === v
+                        ? "bg-[var(--card)] font-medium text-[var(--foreground)] shadow-sm"
+                        : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    {v === "light" ? t("Light") : t("Dark")}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-6 border-t border-[var(--border)] px-5 py-4">
+              <div className="min-w-0">
+                <div className="text-[13px] font-medium text-[var(--foreground)]">
+                  {t("Language")}
+                </div>
+                <p className="mt-0.5 text-[12px] text-[var(--muted-foreground)]">
+                  {t("Display language for the interface.")}
+                </p>
+              </div>
+              <div className="flex shrink-0 gap-0.5 rounded-lg bg-[var(--muted)] p-0.5">
+                {(["en", "zh"] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => updateLanguage(v)}
+                    className={`rounded-md px-2.5 py-1 text-[12px] transition-all ${
+                      language === v
+                        ? "bg-[var(--card)] font-medium text-[var(--foreground)] shadow-sm"
+                        : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                    }`}
+                  >
+                    {v === "en" ? t("language.english") : t("language.chinese")}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="text-[12px] text-[var(--muted-foreground)]">
-              {t("Language")}
-            </span>
-            <div className="flex gap-0.5 rounded-lg bg-[var(--muted)] p-0.5">
-              {(["en", "zh"] as const).map((v) => (
-                <button
-                  key={v}
-                  onClick={() => updateLanguage(v)}
-                  className={`rounded-md px-2.5 py-1 text-[12px] transition-all ${
-                    language === v
-                      ? "bg-[var(--card)] font-medium text-[var(--foreground)] shadow-sm"
-                      : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                  }`}
-                >
-                  {v === "en" ? t("language.english") : t("language.chinese")}
-                </button>
-              ))}
+          <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--card)]">
+            <div className="flex items-center justify-between gap-6 px-5 py-4">
+              <div className="min-w-0">
+                <div className="text-[13px] font-medium text-[var(--foreground)]">
+                  {t("Settings tour")}
+                </div>
+                <p className="mt-0.5 text-[12px] text-[var(--muted-foreground)]">
+                  {t(
+                    "A quick spotlight walk-through of how to wire up models and apply changes.",
+                  )}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={runTour}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-[12px] text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
+              >
+                <Rocket className="h-3 w-3" />
+                {t("Start tour")}
+              </button>
             </div>
-          </div>
-
-          <div className="border-t border-[var(--border)]/50 pt-5">
-            <div className="mb-1.5 text-[12px] font-medium text-[var(--foreground)]">
-              {t("Onboarding")}
-            </div>
-            <p className="mb-2.5 text-[11px] text-[var(--muted-foreground)]">
-              {t(
-                "Step through the highlights of every Models section.",
-              )}
-            </p>
-            <button
-              type="button"
-              onClick={runTour}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-[12px] text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
-            >
-              <Rocket className="h-3 w-3" />
-              {t("Show settings tour")}
-            </button>
           </div>
         </div>
         )}
@@ -1040,6 +1081,7 @@ function SettingsPageContent() {
                 ))}
                 <button
                   type="button"
+                  data-onboarding="add-profile"
                   onClick={addProfile}
                   className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--border)] px-3 py-2 text-[12px] text-[var(--muted-foreground)] transition-colors hover:border-[var(--foreground)]/40 hover:bg-[var(--muted)]/40 hover:text-[var(--foreground)]"
                 >
@@ -1491,7 +1533,10 @@ function SettingsPageContent() {
 
           {/* ── Run test (per-service) ── */}
           {activeProfile && (
-            <div className="mt-6 overflow-hidden rounded-xl border border-[var(--border)]">
+            <div
+              data-onboarding="run-test"
+              className="mt-6 overflow-hidden rounded-xl border border-[var(--border)]"
+            >
               <div
                 className={`flex items-center justify-between gap-3 px-4 py-3 transition-colors ${
                   testStatus === "success"
@@ -1630,7 +1675,7 @@ function SettingsPageContent() {
           </div>
           <button
             type="button"
-            data-tour="tour-actions"
+            data-onboarding="apply"
             onClick={applyCatalog}
             disabled={
               applying || saving || pendingChangeCount === 0
@@ -1648,22 +1693,23 @@ function SettingsPageContent() {
       </div>
       </section>
 
-      {/* ── Spotlight overlay (tour onboarding) ── */}
-      {tourGuideStep >= 0 &&
-        tourGuideStep < TOUR_GUIDE_STEPS.length &&
-        (
-          <SpotlightOverlay
-            stepIndex={tourGuideStep}
-            onNext={() => {
-              if (tourGuideStep < TOUR_GUIDE_STEPS.length - 1) {
-                setTourGuideStep((s) => s + 1);
-              } else {
-                setTourGuideStep(-1);
-              }
-            }}
-            onSkip={() => setTourGuideStep(-1)}
-          />
-        )}
+      <Onboarding
+        steps={tourSteps}
+        stepIndex={tourGuideStep}
+        onAdvance={() => {
+          if (tourGuideStep < tourSteps.length - 1) {
+            setTourGuideStep((s) => s + 1);
+          } else {
+            setTourGuideStep(-1);
+          }
+        }}
+        onSkip={() => setTourGuideStep(-1)}
+        labels={{
+          next: t("Next"),
+          done: t("Got it"),
+          skip: t("Skip tour"),
+        }}
+      />
     </RouteFrame>
   );
 }

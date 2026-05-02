@@ -23,6 +23,7 @@ export { EmptyState } from "./EmptyState";
 export { RouteFrame } from "./RouteFrame";
 export { ListPane } from "./ListPane";
 export { InspectorPanel } from "./InspectorPanel";
+export { Onboarding, type OnboardingStep } from "./Onboarding";
 export {
   ConfirmProvider,
   useConfirm,

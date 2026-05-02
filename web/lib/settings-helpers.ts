@@ -215,38 +215,7 @@ export function sourceBadge(
   return null;
 }
 
-/* ── Tour onboarding steps + provider lists ─────────────── */
-
-export const TOUR_GUIDE_STEPS = [
-  {
-    target: "tour-llm",
-    service: "llm" as const,
-    titleKey: "settingsTour.llm.title",
-    descKey: "settingsTour.llm.desc",
-  },
-  {
-    target: "tour-embedding",
-    service: "embedding" as const,
-    titleKey: "settingsTour.embedding.title",
-    descKey: "settingsTour.embedding.desc",
-  },
-  {
-    target: "tour-search",
-    service: "search" as const,
-    titleKey: "settingsTour.search.title",
-    descKey: "settingsTour.search.desc",
-  },
-  {
-    target: "tour-run-test",
-    titleKey: "settingsTour.saveTest.title",
-    descKey: "settingsTour.saveTest.desc",
-  },
-  {
-    target: "tour-actions",
-    titleKey: "settingsTour.apply.title",
-    descKey: "settingsTour.apply.desc",
-  },
-];
+/* ── Search provider catalog ─────────────────────────────── */
 
 export const supportedSearchProviders = [
   "brave",
