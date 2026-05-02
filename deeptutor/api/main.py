@@ -134,6 +134,23 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Failed to stop EventBus: {e}")
 
+    # Close ProgressBroadcaster WebSockets and clear KnowledgeTaskStreamManager
+    # subscribers (P0.22): both are module-level singletons that previously
+    # leaked sockets/queues across uvicorn --reload cycles.
+    try:
+        from deeptutor.api.utils.progress_broadcaster import ProgressBroadcaster
+
+        await ProgressBroadcaster.get_instance().shutdown()
+    except Exception as e:
+        logger.warning(f"Failed to shutdown ProgressBroadcaster: {e}")
+
+    try:
+        from deeptutor.api.utils.task_log_stream import KnowledgeTaskStreamManager
+
+        KnowledgeTaskStreamManager.get_instance().shutdown()
+    except Exception as e:
+        logger.warning(f"Failed to shutdown KnowledgeTaskStreamManager: {e}")
+
 
 app = FastAPI(
     title="DeepTutor API",

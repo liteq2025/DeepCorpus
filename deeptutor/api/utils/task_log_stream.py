@@ -127,6 +127,39 @@ class KnowledgeTaskStreamManager:
         except asyncio.QueueFull:
             pass
 
+    def shutdown(self) -> None:
+        """Signal all subscribers to terminate and clear in-memory state.
+
+        Pushes a synthetic ``shutdown`` event to every active subscriber
+        queue so its `stream()` loop unblocks and exits, then clears all
+        buffers/subscribers. Called from FastAPI lifespan on shutdown to
+        avoid leaving SSE streams hanging.
+        """
+        with self._lock:
+            subscribers_snapshot = [
+                (task_id, list(subs)) for task_id, subs in self._subscribers.items()
+            ]
+            total = sum(len(subs) for _, subs in subscribers_snapshot)
+            self._buffers.clear()
+            self._subscribers.clear()
+
+        terminator = {
+            "event": "complete",
+            "payload": {"detail": "server shutdown"},
+        }
+        for task_id, subs in subscribers_snapshot:
+            for queue, loop in subs:
+                try:
+                    loop.call_soon_threadsafe(self._queue_event, queue, terminator)
+                except RuntimeError:
+                    continue
+
+        if total:
+            import logging as _logging
+            _logging.getLogger(__name__).info(
+                f"KnowledgeTaskStreamManager terminated {total} subscriber(s) on shutdown"
+            )
+
 
 @contextlib.contextmanager
 def capture_task_logs(task_id: str):

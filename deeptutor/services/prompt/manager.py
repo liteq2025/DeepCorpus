@@ -24,25 +24,23 @@ class PromptManager:
         "en": ["en", "zh", "cn"],
     }
 
-    # Supported modules
-    MODULES = [
-        "research",
-        "solve",
-        "question",
-        "co_writer",
-        "math_animator",
-        "book",
-        "notebook",
-        "visualize",
-        "chat",
-    ]
-
-    # Modules that are not under deeptutor/agents/ directory
-    # Map module_name → on-disk path component under deeptutor/
-    NON_AGENT_MODULES: dict[str, str] = {
-        "book": "book",
-        "co_writer": "co_writer",
-    }
+    # Candidate roots tried in priority order to locate <module>/prompts/.
+    # New v3 structures (verticals / features / platform) come first so future
+    # modules are picked up without editing this file. Legacy locations stay
+    # to support pre-migration code; remove them as P2/P3/P4 land.
+    _PROMPT_ROOT_TEMPLATES: tuple[tuple[str, ...], ...] = (
+        # v3.1 layered structure
+        ("deeptutor", "verticals", "{module}", "prompts"),
+        ("deeptutor", "features", "{module}", "prompts"),
+        ("deeptutor", "services", "platform", "{module}", "prompts"),
+        # Current top-level "feature-shaped" packages (book, co_writer, ...)
+        ("deeptutor", "{module}", "prompts"),
+        # Default agent location
+        ("deeptutor", "agents", "{module}", "prompts"),
+        # Pre-fork legacy paths (backwards compat)
+        ("src", "agents", "{module}", "prompts"),
+        ("src", "{module}", "prompts"),
+    )
 
     def __new__(cls) -> "PromptManager":
         if cls._instance is None:
@@ -115,15 +113,20 @@ class PromptManager:
         return {}
 
     def _candidate_prompt_dirs(self, module_name: str) -> list[Path]:
-        """Return legacy and current prompt roots for a module."""
-        if module_name in self.NON_AGENT_MODULES:
-            legacy_dir = PROJECT_ROOT / "src" / module_name / "prompts"
-            current_dir = PROJECT_ROOT / "deeptutor" / module_name / "prompts"
-            return [legacy_dir, current_dir]
+        """Return existing prompt roots for *module_name* in priority order.
 
-        legacy_dir = PROJECT_ROOT / "src" / "agents" / module_name / "prompts"
-        current_dir = PROJECT_ROOT / "deeptutor" / "agents" / module_name / "prompts"
-        return [legacy_dir, current_dir]
+        Tries every layout in `_PROMPT_ROOT_TEMPLATES` and keeps only those
+        that exist on disk. Order matters: the first matching file wins in
+        `_load_with_fallback`. New verticals/features are picked up
+        automatically — no class-level allow-list to keep in sync.
+        """
+        roots: list[Path] = []
+        for template in self._PROMPT_ROOT_TEMPLATES:
+            parts = [PROJECT_ROOT, *(p.format(module=module_name) for p in template)]
+            candidate = Path(*parts) if not isinstance(parts[0], Path) else parts[0].joinpath(*parts[1:])
+            if candidate.exists():
+                roots.append(candidate)
+        return roots
 
     def _resolve_prompt_path(
         self,

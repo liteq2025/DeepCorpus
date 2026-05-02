@@ -5,18 +5,52 @@ Turn-level runtime manager for unified chat streaming.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Awaitable, Callable
 import contextlib
 from dataclasses import dataclass, field
 import json
 import logging
-from typing import Any
+from typing import Any, Protocol
 
 from deeptutor.core.stream import StreamEvent, StreamEventType
 from deeptutor.services.path_service import get_path_service
 from deeptutor.services.session.sqlite_store import SQLiteSessionStore, get_sqlite_session_store
 
 logger = logging.getLogger(__name__)
+
+
+class NotebookAnalyzer(Protocol):
+    """Contract for notebook/history analyzer agents injected into TurnRuntime.
+
+    Decouples turn_runtime (L2/L3) from concrete agents (L4) — see v3.1
+    architecture adjustments. The default factory below still imports the
+    concrete agent; P2 will move the import to a higher-layer composition
+    root and remove it from this module entirely.
+    """
+
+    async def analyze(
+        self,
+        *,
+        user_question: str,
+        records: list[dict[str, Any]],
+        emit: Callable[..., Awaitable[None]] | None = None,
+    ) -> str: ...
+
+
+NotebookAnalyzerFactory = Callable[[str], NotebookAnalyzer]
+
+
+def _default_notebook_analyzer_factory(language: str) -> NotebookAnalyzer:
+    """Default factory — TODO(v3-P2): move to composition root.
+
+    Lazy-imports `NotebookAnalysisAgent` so this module's import graph stays
+    free of `deeptutor.agents.*` at module load. Still a layer leak per
+    import-linter; will be eliminated when this file moves to
+    `services/domain/orchestration/` and a higher layer wires the factory.
+    """
+    from deeptutor.agents.notebook import NotebookAnalysisAgent
+
+    return NotebookAnalysisAgent(language=language)
 
 
 def _should_capture_assistant_content(event: StreamEvent) -> bool:
@@ -273,8 +307,15 @@ class _TurnExecution:
 class TurnRuntimeManager:
     """Run one turn in the background and multiplex persisted/live events."""
 
-    def __init__(self, store: SQLiteSessionStore | None = None) -> None:
+    def __init__(
+        self,
+        store: SQLiteSessionStore | None = None,
+        notebook_analyzer_factory: NotebookAnalyzerFactory | None = None,
+    ) -> None:
         self.store = store or get_sqlite_session_store()
+        self._notebook_analyzer_factory = (
+            notebook_analyzer_factory or _default_notebook_analyzer_factory
+        )
         self._lock = asyncio.Lock()
         self._executions: dict[str, _TurnExecution] = {}
 
@@ -523,7 +564,6 @@ class TurnRuntimeManager:
         assistant_content = ""
 
         try:
-            from deeptutor.agents.notebook import NotebookAnalysisAgent
             from deeptutor.core.context import Attachment, UnifiedContext
             from deeptutor.runtime.orchestrator import ChatOrchestrator
             from deeptutor.services.llm.config import get_llm_config
@@ -668,8 +708,8 @@ class TurnRuntimeManager:
             if notebook_references:
                 referenced_records = notebook_manager.get_records_by_references(notebook_references)
                 if referenced_records:
-                    analysis_agent = NotebookAnalysisAgent(
-                        language=str(payload.get("language", "en") or "en")
+                    analysis_agent = self._notebook_analyzer_factory(
+                        str(payload.get("language", "en") or "en")
                     )
                     notebook_context = await analysis_agent.analyze(
                         user_question=raw_user_content,
@@ -728,8 +768,8 @@ class TurnRuntimeManager:
                     )
 
                 if history_records:
-                    analysis_agent = NotebookAnalysisAgent(
-                        language=str(payload.get("language", "en") or "en")
+                    analysis_agent = self._notebook_analyzer_factory(
+                        str(payload.get("language", "en") or "en")
                     )
                     history_context = await analysis_agent.analyze(
                         user_question=raw_user_content,

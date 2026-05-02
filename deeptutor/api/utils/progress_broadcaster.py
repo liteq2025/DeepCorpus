@@ -72,3 +72,22 @@ class ProgressBroadcaster:
     def get_connection_count(self, kb_name: str) -> int:
         """Get connection count for specified knowledge base"""
         return len(self._connections.get(kb_name, set()))
+
+    async def shutdown(self) -> None:
+        """Close all open WebSocket connections and clear state.
+
+        Called from FastAPI lifespan on shutdown to avoid leaving sockets
+        half-open during reload (uvicorn --reload) or termination.
+        """
+        async with self._lock:
+            total = sum(len(conns) for conns in self._connections.values())
+            for kb_name in list(self._connections.keys()):
+                for ws in list(self._connections[kb_name]):
+                    try:
+                        await ws.close(code=1001, reason="server shutdown")
+                    except Exception as e:
+                        logger.debug(f"Ignoring close error for KB '{kb_name}': {e}")
+                self._connections[kb_name].clear()
+            self._connections.clear()
+        if total:
+            logger.info(f"ProgressBroadcaster closed {total} WS connection(s) on shutdown")
