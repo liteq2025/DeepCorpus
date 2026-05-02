@@ -65,6 +65,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import ProcessLogs from "@/components/common/ProcessLogs";
 import RichCodeBlock from "@/components/common/RichCodeBlock";
@@ -585,6 +598,116 @@ function ToastPreview() {
         loading
       </Button>
     </Row>
+  );
+}
+
+function SelectPreview() {
+  return (
+    <Stack>
+      <div className="grid w-full max-w-sm gap-1.5">
+        <Label htmlFor="demo-select-model">embedding 模型</Label>
+        <Select defaultValue="text-embedding-3-small">
+          <SelectTrigger id="demo-select-model">
+            <SelectValue placeholder="选择模型" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>OpenAI</SelectLabel>
+              <SelectItem value="text-embedding-3-small">
+                text-embedding-3-small (1536d)
+              </SelectItem>
+              <SelectItem value="text-embedding-3-large">
+                text-embedding-3-large (3072d)
+              </SelectItem>
+            </SelectGroup>
+            <SelectSeparator />
+            <SelectGroup>
+              <SelectLabel>BGE</SelectLabel>
+              <SelectItem value="bge-large-zh">bge-large-zh (1024d)</SelectItem>
+              <SelectItem value="bge-m3">bge-m3 (1024d)</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
+    </Stack>
+  );
+}
+
+function BadgePreview() {
+  return (
+    <Stack>
+      <div>
+        <VariantLabel>variant</VariantLabel>
+        <Row>
+          <Badge>default</Badge>
+          <Badge variant="secondary">secondary</Badge>
+          <Badge variant="destructive">destructive</Badge>
+          <Badge variant="outline">outline</Badge>
+          <Badge variant="ghost">ghost</Badge>
+        </Row>
+      </div>
+      <div>
+        <VariantLabel>with icon / count</VariantLabel>
+        <Row>
+          <Badge variant="secondary">
+            <Sparkles data-icon="inline-start" />
+            new
+          </Badge>
+          <Badge variant="outline">v1.3.2</Badge>
+          <Badge>{42}</Badge>
+        </Row>
+      </div>
+    </Stack>
+  );
+}
+
+function SeparatorPreview() {
+  return (
+    <Stack>
+      <div>
+        <VariantLabel>horizontal</VariantLabel>
+        <div className="flex flex-col gap-2">
+          <div className="text-[13px]">上半区</div>
+          <Separator />
+          <div className="text-[13px]">下半区</div>
+        </div>
+      </div>
+      <div>
+        <VariantLabel>vertical</VariantLabel>
+        <Row>
+          <span className="text-[13px]">A</span>
+          <Separator orientation="vertical" className="h-4" />
+          <span className="text-[13px]">B</span>
+          <Separator orientation="vertical" className="h-4" />
+          <span className="text-[13px]">C</span>
+        </Row>
+      </div>
+    </Stack>
+  );
+}
+
+function SkeletonPreview() {
+  return (
+    <Stack>
+      <div>
+        <VariantLabel>list-item shape</VariantLabel>
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-9 w-9 rounded-full" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-3 w-48" />
+          </div>
+        </div>
+      </div>
+      <div>
+        <VariantLabel>card shape</VariantLabel>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-1/2" />
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-4/5" />
+        </div>
+      </div>
+    </Stack>
   );
 }
 
@@ -2229,6 +2352,44 @@ export const SHOWCASES: Showcase[] = [
     description:
       "imperative 通知队列（≤ 3）。app/layout.tsx 已挂载 <Toaster richColors closeButton />。",
     Preview: ToastPreview,
+  },
+  {
+    id: "ui-select",
+    category: "UI 原语",
+    categoryCode: "ui/",
+    name: "下拉选择",
+    code: "Select",
+    description:
+      "替代 raw <select>。带键盘导航 / a11y / 自定义样式。",
+    Preview: SelectPreview,
+  },
+  {
+    id: "ui-badge",
+    category: "UI 原语",
+    categoryCode: "ui/",
+    name: "徽章",
+    code: "Badge",
+    description:
+      "状态 / 计数 / 标签。6 种 variant（default/secondary/destructive/outline/ghost/link）。替代散落各处的 inline pill。",
+    Preview: BadgePreview,
+  },
+  {
+    id: "ui-separator",
+    category: "UI 原语",
+    categoryCode: "ui/",
+    name: "分隔线",
+    code: "Separator",
+    description: "水平 / 垂直分隔。替代 raw <div className=\"h-px ...\">。",
+    Preview: SeparatorPreview,
+  },
+  {
+    id: "ui-skeleton",
+    category: "UI 原语",
+    categoryCode: "ui/",
+    name: "骨架屏",
+    code: "Skeleton",
+    description: "loading 占位。替代手撸 animate-pulse 块。",
+    Preview: SkeletonPreview,
   },
   {
     id: "common-process-logs",
