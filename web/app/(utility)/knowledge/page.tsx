@@ -215,8 +215,6 @@ function KnowledgePageContent() {
                 tasksByKb={tasksByKb}
               />
             }
-            width={260}
-            collapsedWidth={48}
           >
             <KnowledgeBaseList
               kbs={kbs}

@@ -13,6 +13,7 @@ import {
   ShowcaseErrorBoundary,
   type Showcase,
 } from "@/components/dev/showcases";
+import { ListPane, RouteFrame } from "@/components/layout";
 
 const STATUS_STYLES: Record<ModuleStatus, string> = {
   shipped: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
@@ -517,30 +518,47 @@ function ComponentsShowcase({ showcases }: { showcases: Showcase[] }) {
   );
 }
 
-function GroupNav({
-  selectedId,
-  onSelect,
-  galleryCount,
-  showcaseCount,
-}: {
-  selectedId: string;
-  onSelect: (id: string) => void;
-  galleryCount: number;
-  showcaseCount: number;
-}) {
-  const navItems: Array<{ id: string; label: string; count: number }> = [
-    { id: SHOWCASE_ID, label: "🎨 组件预览", count: showcaseCount },
-    { id: GALLERY_ID, label: "🗂️ 全部组件总览", count: galleryCount },
-    { id: TREE_ID, label: "🌳 UI 架构树", count: TREE_FILE_COUNT },
+interface DevNavItem {
+  id: string;
+  label: string;
+  count: number;
+  /** Single-glyph rendering for the collapsed icon strip. */
+  glyph: string;
+}
+
+function buildNavItems(
+  galleryCount: number,
+  showcaseCount: number,
+): DevNavItem[] {
+  return [
+    { id: SHOWCASE_ID, label: "🎨 组件预览", count: showcaseCount, glyph: "🎨" },
+    {
+      id: GALLERY_ID,
+      label: "🗂️ 全部组件总览",
+      count: galleryCount,
+      glyph: "🗂",
+    },
+    { id: TREE_ID, label: "🌳 UI 架构树", count: TREE_FILE_COUNT, glyph: "🌳" },
     ...DEV_REGISTRY.map((g) => ({
       id: g.id,
       label: g.label,
       count: g.modules.length,
+      glyph: g.label.slice(0, 1).toUpperCase(),
     })),
   ];
+}
 
+function GroupNav({
+  selectedId,
+  onSelect,
+  navItems,
+}: {
+  selectedId: string;
+  onSelect: (id: string) => void;
+  navItems: DevNavItem[];
+}) {
   return (
-    <nav className="flex flex-col gap-1">
+    <nav aria-label="Dev console sections" className="space-y-0.5 px-1 pt-1">
       {navItems.map((item) => {
         const active = item.id === selectedId;
         return (
@@ -548,15 +566,18 @@ function GroupNav({
             key={item.id}
             type="button"
             onClick={() => onSelect(item.id)}
-            className={`flex items-center justify-between rounded-md px-3 py-2 text-left text-[13px] transition ${
+            aria-current={active ? "page" : undefined}
+            className={`group flex w-full items-center justify-between gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors ${
               active
-                ? "bg-[var(--primary)]/15 text-[var(--foreground)]"
-                : "text-[var(--muted-foreground)] hover:bg-[var(--secondary)]/50 hover:text-[var(--foreground)]"
+                ? "border-[var(--primary)]/40 bg-[var(--primary)]/8"
+                : "border-transparent hover:border-[var(--border)] hover:bg-[var(--muted)]/40"
             }`}
           >
-            <span className="truncate font-medium">{item.label}</span>
+            <span className="truncate text-[13px] font-medium leading-tight text-[var(--foreground)]">
+              {item.label}
+            </span>
             <span
-              className={`ml-2 inline-flex shrink-0 items-center rounded px-1.5 py-0.5 text-[10px] ${
+              className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] ${
                 active
                   ? "bg-[var(--primary)]/20 text-[var(--foreground)]"
                   : "bg-[var(--secondary)]/40 text-[var(--muted-foreground)]"
@@ -564,6 +585,44 @@ function GroupNav({
             >
               {item.count}
             </span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+function GroupNavCollapsed({
+  selectedId,
+  onSelect,
+  navItems,
+}: {
+  selectedId: string;
+  onSelect: (id: string) => void;
+  navItems: DevNavItem[];
+}) {
+  return (
+    <nav
+      aria-label="Dev console sections"
+      className="flex h-full flex-col items-center gap-1 py-2"
+    >
+      {navItems.map((item) => {
+        const active = item.id === selectedId;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onSelect(item.id)}
+            title={item.label}
+            aria-label={item.label}
+            aria-current={active ? "page" : undefined}
+            className={`flex h-8 w-8 items-center justify-center rounded-lg border text-[12px] transition-colors ${
+              active
+                ? "border-[var(--primary)]/40 bg-[var(--primary)]/10 text-[var(--foreground)]"
+                : "border-transparent text-[var(--muted-foreground)] hover:bg-[var(--muted)]/50 hover:text-[var(--foreground)]"
+            }`}
+          >
+            {item.glyph}
           </button>
         );
       })}
@@ -611,23 +670,32 @@ export default function DevDashboard({
     0,
   );
 
+  const navItems = buildNavItems(componentsGroup.modules.length, SHOWCASES.length);
+
   return (
-    <div className="flex h-full">
-      <aside className="w-60 shrink-0 overflow-y-auto border-r border-[var(--border)] bg-[var(--card)]/40 px-3 py-5">
-        <div className="mb-4 px-2">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]">
-            Dev Console
-          </h2>
-        </div>
+    <RouteFrame>
+      <ListPane
+        id="dev-nav"
+        title="Dev Console"
+        collapsedContent={
+          <GroupNavCollapsed
+            selectedId={selectedId}
+            onSelect={setSelectedId}
+            navItems={navItems}
+          />
+        }
+      >
         <GroupNav
           selectedId={selectedId}
           onSelect={setSelectedId}
-          galleryCount={componentsGroup.modules.length}
-          showcaseCount={SHOWCASES.length}
+          navItems={navItems}
         />
-      </aside>
+      </ListPane>
 
-      <section className="flex-1 overflow-y-auto px-10 py-8">
+      <section
+        aria-label="Dev console content"
+        className="flex-1 overflow-y-auto px-10 py-8"
+      >
         <div className="mx-auto max-w-7xl">
           {isShowcase ? (
             <>
@@ -677,6 +745,6 @@ export default function DevDashboard({
           )}
         </div>
       </section>
-    </div>
+    </RouteFrame>
   );
 }

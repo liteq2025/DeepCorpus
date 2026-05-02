@@ -15,13 +15,16 @@ import {
   Rocket,
   Save,
   Search,
+  SlidersHorizontal,
   Terminal,
   Trash2,
   Wand2,
+  type LucideIcon,
 } from "lucide-react";
 
 import { useTranslation } from "react-i18next";
 
+import { ListPane, RouteFrame } from "@/components/layout";
 import { writeStoredLanguage } from "@/context/app-shell-storage";
 import { apiUrl } from "@/lib/api";
 import { setTheme as applyThemePreference } from "@/lib/theme";
@@ -58,6 +61,138 @@ function serviceIcon(service: ServiceName) {
   return <Search className="h-3.5 w-3.5" />;
 }
 
+type Section = "preferences" | "llm" | "embedding" | "search" | "diagnostics";
+
+interface SectionEntry {
+  id: Section;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+}
+
+const SECTIONS: SectionEntry[] = [
+  {
+    id: "preferences",
+    label: "Preferences",
+    description: "Theme, language, and runtime status.",
+    icon: SlidersHorizontal,
+  },
+  {
+    id: "llm",
+    label: "LLM",
+    description: "Chat model profiles and credentials.",
+    icon: Brain,
+  },
+  {
+    id: "embedding",
+    label: "Embedding",
+    description: "Vector encoder profiles and dimensions.",
+    icon: Database,
+  },
+  {
+    id: "search",
+    label: "Search",
+    description: "Web search providers and proxies.",
+    icon: Search,
+  },
+  {
+    id: "diagnostics",
+    label: "Diagnostics",
+    description: "Stream config + run a connection test.",
+    icon: Terminal,
+  },
+];
+
+const SERVICE_SECTIONS = new Set<Section>(["llm", "embedding", "search"]);
+
+function SectionsNav({
+  activeSection,
+  onSelect,
+}: {
+  activeSection: Section;
+  onSelect: (section: Section) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <nav aria-label={t("Settings sections")} className="space-y-0.5 px-1 pt-1">
+      {SECTIONS.map(({ id, label, description, icon: Icon }) => {
+        const active = activeSection === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onSelect(id)}
+            aria-current={active ? "page" : undefined}
+            className={`group block w-full rounded-lg border px-2.5 py-2 text-left transition-colors ${
+              active
+                ? "border-[var(--primary)]/40 bg-[var(--primary)]/8"
+                : "border-transparent hover:border-[var(--border)] hover:bg-[var(--muted)]/40"
+            }`}
+          >
+            <div className="flex items-start gap-2">
+              <Icon
+                size={14}
+                strokeWidth={active ? 2 : 1.6}
+                className={`mt-0.5 shrink-0 ${
+                  active
+                    ? "text-[var(--foreground)]"
+                    : "text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]"
+                }`}
+                aria-hidden
+              />
+              <div className="min-w-0 flex-1">
+                <div className="text-[13px] font-medium leading-tight text-[var(--foreground)]">
+                  {t(label)}
+                </div>
+                <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-[var(--muted-foreground)]">
+                  {t(description)}
+                </p>
+              </div>
+            </div>
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+function SectionsNavCollapsed({
+  activeSection,
+  onSelect,
+}: {
+  activeSection: Section;
+  onSelect: (section: Section) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <nav
+      aria-label={t("Settings sections")}
+      className="flex h-full flex-col items-center gap-1 py-2"
+    >
+      {SECTIONS.map(({ id, label, icon: Icon }) => {
+        const active = activeSection === id;
+        return (
+          <button
+            key={id}
+            type="button"
+            onClick={() => onSelect(id)}
+            title={t(label)}
+            aria-label={t(label)}
+            aria-current={active ? "page" : undefined}
+            className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${
+              active
+                ? "border-[var(--primary)]/40 bg-[var(--primary)]/10 text-[var(--foreground)]"
+                : "border-transparent text-[var(--muted-foreground)] hover:bg-[var(--muted)]/50 hover:text-[var(--foreground)]"
+            }`}
+          >
+            <Icon size={14} strokeWidth={active ? 2 : 1.6} aria-hidden />
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Main component
 // ═══════════════════════════════════════════════════════════════════════════
@@ -70,6 +205,7 @@ function SettingsPageContent() {
   const [language, setLanguage] = useState<"en" | "zh">("en");
   const [catalog, setCatalog] = useState<Catalog>(defaultCatalog());
   const [draft, setDraft] = useState<Catalog>(defaultCatalog());
+  const [activeSection, setActiveSection] = useState<Section>("preferences");
   const [activeService, setActiveService] = useState<ServiceName>("llm");
   const [logs, setLogs] = useState<string>("Waiting for test run...");
   const [testRunning, setTestRunning] = useState<ServiceName | null>(null);
@@ -77,7 +213,7 @@ function SettingsPageContent() {
   const [applying, setApplying] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
   const [toast, setToast] = useState<string>("");
-  const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(true);
   const [providers, setProviders] = useState<
     Record<ServiceName, ProviderOption[]>
   >({ llm: [], embedding: [], search: [] });
@@ -137,8 +273,16 @@ function SettingsPageContent() {
     const currentStep = TOUR_GUIDE_STEPS[tourGuideStep];
     if (currentStep?.service) {
       setActiveService(currentStep.service);
+      setActiveSection(currentStep.service);
     }
   }, [tourGuideStep]);
+
+  const selectSection = useCallback((section: Section) => {
+    setActiveSection(section);
+    if (SERVICE_SECTIONS.has(section)) {
+      setActiveService(section as ServiceName);
+    }
+  }, []);
 
   // -- Derived ------------------------------------------------------------
 
@@ -478,7 +622,26 @@ function SettingsPageContent() {
   // ═══════════════════════════════════════════════════════════════════════
 
   return (
-    <div className="h-full overflow-y-auto [scrollbar-gutter:stable]">
+    <RouteFrame>
+      <ListPane
+        id="settings-sections"
+        title={t("Settings")}
+        collapsedContent={
+          <SectionsNavCollapsed
+            activeSection={activeSection}
+            onSelect={selectSection}
+          />
+        }
+      >
+        <SectionsNav
+          activeSection={activeSection}
+          onSelect={selectSection}
+        />
+      </ListPane>
+      <section
+        aria-label="Settings content"
+        className="flex-1 overflow-y-auto [scrollbar-gutter:stable]"
+      >
       <div className="mx-auto max-w-[960px] px-6 py-8">
         {/* ── Header ── */}
         <div className="mb-6 flex items-start justify-between">
@@ -535,6 +698,8 @@ function SettingsPageContent() {
           </div>
         </div>
 
+        {activeSection === "preferences" && (
+        <>
         {/* ── Preferences & Runtime ── */}
         <div className="mb-8 flex flex-wrap items-center gap-x-8 gap-y-3 border-b border-[var(--border)]/50 pb-6">
           <div className="flex items-center gap-2">
@@ -611,29 +776,28 @@ function SettingsPageContent() {
             </span>
           </div>
         </div>
+        </>
+        )}
 
+        {SERVICE_SECTIONS.has(activeSection) && (
+        <>
         {/* ── Service Configuration ── */}
         <div className="mb-8">
           <div className="mb-5 flex items-center justify-between">
-            <div className="flex items-center gap-1">
-              {(["llm", "embedding", "search"] as const).map((service) => (
-                <button
-                  key={service}
-                  data-tour={`tour-${service}`}
-                  onClick={() => setActiveService(service)}
-                  className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[13px] transition-colors ${
-                    activeService === service
-                      ? "bg-[var(--muted)] font-medium text-[var(--foreground)]"
-                      : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                  }`}
-                >
-                  {serviceIcon(service)}
-                  {service.toUpperCase()}
-                  <span className="text-[11px] text-[var(--muted-foreground)]/60">
-                    {draft.services[service].profiles.length}
-                  </span>
-                </button>
-              ))}
+            <div className="flex items-baseline gap-2">
+              <h2 className="text-[16px] font-semibold text-[var(--foreground)]">
+                {t(activeService === "llm"
+                  ? "LLM"
+                  : activeService === "embedding"
+                    ? "Embedding"
+                    : "Search")}
+              </h2>
+              <span
+                data-tour={`tour-${activeService}`}
+                className="text-[11px] text-[var(--muted-foreground)]"
+              >
+                {draft.services[activeService].profiles.length} {t("profiles")}
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -1076,7 +1240,11 @@ function SettingsPageContent() {
             </div>
           )}
         </div>
+        </>
+        )}
 
+        {activeSection === "diagnostics" && (
+        <>
         {/* ── Diagnostics ── */}
         <div className="mb-6 rounded-xl border border-[var(--border)]">
           <div className="flex items-center justify-between px-5 py-3.5">
@@ -1138,12 +1306,15 @@ function SettingsPageContent() {
             </div>
           )}
         </div>
+        </>
+        )}
 
         {/* ── Footer note ── */}
         <p className="mt-2 pb-4 text-[11px] leading-relaxed text-[var(--muted-foreground)]/40">
           {t("settings.configNote")}
         </p>
       </div>
+      </section>
 
       {/* ── Spotlight overlay (tour onboarding) ── */}
       {tourGuideStep >= 0 &&
@@ -1161,7 +1332,7 @@ function SettingsPageContent() {
             onSkip={() => setTourGuideStep(-1)}
           />
         )}
-    </div>
+    </RouteFrame>
   );
 }
 

@@ -22,12 +22,13 @@ test.describe("smoke :: golden paths", () => {
 
   test("/dev console shows the showcase view by default", async ({ page }) => {
     await page.goto(`${BASE_URL}/dev`);
-    // Dev Console heading lives in the inner sidebar.
-    await expect(
-      page.getByRole("heading", { name: /dev console/i }),
-    ).toBeVisible();
-    // The default (showcase) view always includes the 组件预览 nav button.
+    // Layer-2 ListPane wraps the section nav; the "组件预览" button is
+    // present in both expanded and collapsed states.
     await expect(page.getByRole("button", { name: /组件预览/ })).toBeVisible();
+    // The default view's main-area h1 confirms the showcase mounted.
+    await expect(
+      page.getByRole("heading", { name: /^组件预览$/ }),
+    ).toBeVisible();
   });
 
   test("/settings switching to Dark applies the dark class", async ({
