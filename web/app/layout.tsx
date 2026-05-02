@@ -4,6 +4,7 @@ import "./globals.css";
 import ThemeScript from "@/components/ThemeScript";
 import { AppShellProvider } from "@/context/AppShellContext";
 import { ConfirmProvider, LayoutProvider } from "@/components/layout";
+import { Toaster } from "@/components/ui/sonner";
 import { I18nClientBridge } from "@/i18n/I18nClientBridge";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +60,7 @@ export default function RootLayout({
             </ConfirmProvider>
           </LayoutProvider>
         </AppShellProvider>
+        <Toaster richColors closeButton />
       </body>
     </html>
   );

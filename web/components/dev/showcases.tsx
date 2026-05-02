@@ -23,6 +23,49 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { toast } from "sonner";
 import ProcessLogs from "@/components/common/ProcessLogs";
 import RichCodeBlock from "@/components/common/RichCodeBlock";
 import ModelThinkingCard from "@/components/common/ModelThinkingCard";
@@ -355,6 +398,193 @@ function ModalPreview() {
         </SheetContent>
       </Sheet>
     </>
+  );
+}
+
+function AlertDialogPreview() {
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="destructive">删除知识库</Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>删除「demo-kb」？</AlertDialogTitle>
+          <AlertDialogDescription>
+            操作不可撤销 — 索引、文档、所有引用链都会清空。仅用于真正破坏性的确认。
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>取消</AlertDialogCancel>
+          <AlertDialogAction>确认删除</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+function DialogPreview() {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline">打开 Dialog</Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>居中模态</DialogTitle>
+          <DialogDescription>
+            仅在硬阻断（连接断开 / API key 缺失）或一句话非破坏性确认场景使用。
+            日常表单/预览/浏览请用 <code>{"<Sheet>"}</code>。
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="ghost">关闭</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function DropdownMenuPreview() {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm">
+          操作
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuLabel>知识库操作</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem>设为默认</DropdownMenuItem>
+        <DropdownMenuItem>重新索引</DropdownMenuItem>
+        <DropdownMenuItem>导出</DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive">删除</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function InputPreview() {
+  return (
+    <Stack>
+      <div className="grid w-full max-w-sm gap-1.5">
+        <Label htmlFor="demo-input-name">知识库名</Label>
+        <Input id="demo-input-name" placeholder="例如：machine-learning" />
+      </div>
+      <div className="grid w-full max-w-sm gap-1.5">
+        <Label htmlFor="demo-input-disabled">已锁定字段</Label>
+        <Input
+          id="demo-input-disabled"
+          defaultValue="demo-kb"
+          disabled
+        />
+      </div>
+    </Stack>
+  );
+}
+
+function TextareaPreview() {
+  return (
+    <div className="grid w-full max-w-sm gap-1.5">
+      <Label htmlFor="demo-textarea">描述</Label>
+      <Textarea
+        id="demo-textarea"
+        placeholder="可多行输入。回车换行，Cmd+Enter 提交（由调用方决定）。"
+        rows={4}
+      />
+    </div>
+  );
+}
+
+function PopoverPreview() {
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm">
+          打开 Popover
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72" align="start">
+        <div className="space-y-2">
+          <p className="text-[13px] font-medium">锚定弹层</p>
+          <p className="text-[12px] leading-relaxed text-[var(--muted-foreground)]">
+            自由布局的小弹层。带列表用 <code>{"<DropdownMenu>"}</code>，
+            破坏性确认用 <code>{"<AlertDialog>"}</code>。
+          </p>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function TooltipPreview() {
+  return (
+    <TooltipProvider delayDuration={150}>
+      <Row>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="sm">
+              悬停我
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>≤ 1 行的 hover 提示</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" size="sm">
+              另一个
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">支持 side / align 调整</TooltipContent>
+        </Tooltip>
+      </Row>
+    </TooltipProvider>
+  );
+}
+
+function ToastPreview() {
+  return (
+    <Row>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => toast.success("索引已重建")}
+      >
+        success
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => toast.info("已切换到 dark 主题")}
+      >
+        info
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => toast.warning("剩余配额不足 10%")}
+      >
+        warning
+      </Button>
+      <Button
+        size="sm"
+        variant="destructive"
+        onClick={() => toast.error("上传失败：网络断开")}
+      >
+        error
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={() =>
+          toast.loading("正在重建索引…", { duration: 2000 })
+        }
+      >
+        loading
+      </Button>
+    </Row>
   );
 }
 
@@ -1924,6 +2154,81 @@ export const SHOWCASES: Showcase[] = [
     description:
       "默认 overlay — 表单、预览、浏览、设置 全用 Sheet。Phase 0.5.6 把旧版 `common/Modal` 迁来这里。",
     Preview: ModalPreview,
+  },
+  {
+    id: "ui-alert-dialog",
+    category: "UI 原语",
+    categoryCode: "ui/",
+    name: "破坏性确认",
+    code: "AlertDialog",
+    description:
+      "不可撤销操作的硬阻断确认。15 处 window.confirm() 已通过 useConfirm() 收口到这里。",
+    Preview: AlertDialogPreview,
+  },
+  {
+    id: "ui-dialog",
+    category: "UI 原语",
+    categoryCode: "ui/",
+    name: "居中模态",
+    code: "Dialog",
+    description:
+      "仅破坏性确认 / 硬阻断 / 一句话非破坏性确认场景使用，其他全走 Sheet。",
+    Preview: DialogPreview,
+  },
+  {
+    id: "ui-dropdown-menu",
+    category: "UI 原语",
+    categoryCode: "ui/",
+    name: "下拉菜单",
+    code: "DropdownMenu",
+    description: "锚定的列表弹层。支持 label / separator / destructive variant。",
+    Preview: DropdownMenuPreview,
+  },
+  {
+    id: "ui-input",
+    category: "UI 原语",
+    categoryCode: "ui/",
+    name: "输入框",
+    code: "Input + Label",
+    description: "shadcn 标准表单输入：Input 配 Label，固定 ring/focus token。",
+    Preview: InputPreview,
+  },
+  {
+    id: "ui-textarea",
+    category: "UI 原语",
+    categoryCode: "ui/",
+    name: "多行输入",
+    code: "Textarea",
+    description: "多行版 Input，与 Input 共享 ring/focus token。",
+    Preview: TextareaPreview,
+  },
+  {
+    id: "ui-popover",
+    category: "UI 原语",
+    categoryCode: "ui/",
+    name: "锚定弹层",
+    code: "Popover",
+    description: "自由布局的小弹层（非列表）。列表场景用 DropdownMenu。",
+    Preview: PopoverPreview,
+  },
+  {
+    id: "ui-tooltip",
+    category: "UI 原语",
+    categoryCode: "ui/",
+    name: "悬停提示",
+    code: "Tooltip",
+    description: "≤ 1 行的 hover 文字提示。需要 TooltipProvider 包裹。",
+    Preview: TooltipPreview,
+  },
+  {
+    id: "ui-toast",
+    category: "UI 原语",
+    categoryCode: "ui/",
+    name: "通知",
+    code: "sonner / toast()",
+    description:
+      "imperative 通知队列（≤ 3）。app/layout.tsx 已挂载 <Toaster richColors closeButton />。",
+    Preview: ToastPreview,
   },
   {
     id: "common-process-logs",
