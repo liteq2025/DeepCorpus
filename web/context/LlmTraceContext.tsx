@@ -33,6 +33,23 @@ export interface LlmCallRecord {
   usageKind: "exact" | "estimated";
   turnId: string;
   sessionId: string;
+  /** Detail surfaces — what the call carried into the prompt. */
+  systemPromptKind: string;
+  systemPromptChars: number;
+  systemPromptPreview: string;
+  messagesCount: number;
+  messagesChars: number;
+  tools: string[];
+  toolSchemasCount: number;
+  toolSchemaNames: string[];
+  /** acting-stage only: which tools the LLM actually called this round. */
+  toolCalls: string[];
+  knowledgeBases: string[];
+  skillsContextChars: number;
+  memoryContextChars: number;
+  notebookContextChars: number;
+  historyContextChars: number;
+  attachmentsCount: number;
   metadata?: Record<string, unknown>;
 }
 
@@ -118,6 +135,8 @@ export function LlmTraceProvider({ children }: { children: ReactNode }) {
   const recordEvent = useCallback((event: StreamEvent) => {
     if (event.type !== "llm_call") return;
     const md = (event.metadata ?? {}) as Record<string, unknown>;
+    const asStringList = (raw: unknown): string[] =>
+      Array.isArray(raw) ? raw.filter((x): x is string => typeof x === "string") : [];
     dispatch({
       type: "RECORD",
       record: {
@@ -135,6 +154,21 @@ export function LlmTraceProvider({ children }: { children: ReactNode }) {
         usageKind: md.usage_kind === "estimated" ? "estimated" : "exact",
         turnId: event.turn_id || "",
         sessionId: event.session_id || "",
+        systemPromptKind: String(md.system_prompt_kind ?? md.stage ?? ""),
+        systemPromptChars: Number(md.system_prompt_chars ?? 0),
+        systemPromptPreview: String(md.system_prompt_preview ?? ""),
+        messagesCount: Number(md.messages_count ?? 0),
+        messagesChars: Number(md.messages_chars ?? 0),
+        tools: asStringList(md.tools),
+        toolSchemasCount: Number(md.tool_schemas_count ?? 0),
+        toolSchemaNames: asStringList(md.tool_schema_names),
+        toolCalls: asStringList(md.tool_calls),
+        knowledgeBases: asStringList(md.knowledge_bases),
+        skillsContextChars: Number(md.skills_context_chars ?? 0),
+        memoryContextChars: Number(md.memory_context_chars ?? 0),
+        notebookContextChars: Number(md.notebook_context_chars ?? 0),
+        historyContextChars: Number(md.history_context_chars ?? 0),
+        attachmentsCount: Number(md.attachments_count ?? 0),
         metadata: md,
       },
     });

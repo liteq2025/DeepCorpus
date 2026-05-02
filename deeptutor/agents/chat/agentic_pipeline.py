@@ -263,9 +263,10 @@ class AgenticChatPipeline:
                 "thinking.user",
                 user_message=context.user_message,
             )
+            _thinking_sys = self._thinking_system_prompt(enabled_tools, context)
             messages = self._build_messages(
                 context=context,
-                system_prompt=self._thinking_system_prompt(enabled_tools, context),
+                system_prompt=_thinking_sys,
                 user_content=thinking_user or context.user_message,
             )
             messages, images_stripped = self._prepare_messages_with_attachments(
@@ -286,6 +287,13 @@ class AgenticChatPipeline:
                 max_tokens=self._chat_limits.thinking,
                 stream=stream,
                 stage="thinking",
+                extra_metadata=self._build_call_metadata(
+                    stage="thinking",
+                    context=context,
+                    system_prompt=_thinking_sys,
+                    messages=messages,
+                    enabled_tools=enabled_tools,
+                ),
             ):
                 if not chunk:
                     continue
@@ -371,9 +379,10 @@ class AgenticChatPipeline:
                 ),
             )
             observation_prompt = self._t("observing.user_intro")
+            _observing_sys = self._observing_system_prompt(enabled_tools)
             messages = self._build_messages(
                 context=context,
-                system_prompt=self._observing_system_prompt(enabled_tools),
+                system_prompt=_observing_sys,
                 user_content=(
                     f"{observation_prompt}\n\n"
                     f"{self._labeled_block('Thinking', thinking_text)}\n\n"
@@ -387,6 +396,14 @@ class AgenticChatPipeline:
                 max_tokens=self._chat_limits.observing,
                 stream=stream,
                 stage="observing",
+                extra_metadata=self._build_call_metadata(
+                    stage="observing",
+                    context=context,
+                    system_prompt=_observing_sys,
+                    messages=messages,
+                    enabled_tools=enabled_tools,
+                    extra={"tool_traces_count": len(tool_traces)},
+                ),
             ):
                 if not chunk:
                     continue
@@ -442,9 +459,10 @@ class AgenticChatPipeline:
                 observation=observation.strip() if observation.strip() else "(empty)",
                 tool_trace=self._format_tool_traces(tool_traces),
             )
+            _responding_sys = self._responding_system_prompt(enabled_tools)
             messages = self._build_messages(
                 context=context,
-                system_prompt=self._responding_system_prompt(enabled_tools),
+                system_prompt=_responding_sys,
                 user_content=user_prompt,
             )
             messages, _ = self._prepare_messages_with_attachments(messages, context)
@@ -455,6 +473,14 @@ class AgenticChatPipeline:
                 max_tokens=self._chat_limits.responding,
                 stream=stream,
                 stage="responding",
+                extra_metadata=self._build_call_metadata(
+                    stage="responding",
+                    context=context,
+                    system_prompt=_responding_sys,
+                    messages=messages,
+                    enabled_tools=enabled_tools,
+                    extra={"tool_traces_count": len(tool_traces)},
+                ),
             ):
                 if not chunk:
                     continue
@@ -557,9 +583,10 @@ class AgenticChatPipeline:
                 else "(empty)",
                 trace_summary=trace_summary,
             )
+            _answer_now_sys = self._responding_system_prompt([])
             messages = self._build_messages(
                 context=context,
-                system_prompt=self._responding_system_prompt([]),
+                system_prompt=_answer_now_sys,
                 user_content=user_prompt,
             )
 
@@ -569,6 +596,13 @@ class AgenticChatPipeline:
                 max_tokens=self._chat_limits.answer_now,
                 stream=stream,
                 stage="answer_now",
+                extra_metadata=self._build_call_metadata(
+                    stage="answer_now",
+                    context=context,
+                    system_prompt=_answer_now_sys,
+                    messages=messages,
+                    enabled_tools=[],
+                ),
             ):
                 if not chunk:
                     continue
@@ -598,9 +632,10 @@ class AgenticChatPipeline:
         stream: StreamBus,
     ) -> list[ToolTrace]:
         tool_schemas = self._build_llm_tool_schemas(enabled_tools)
+        _acting_sys = self._acting_system_prompt(enabled_tools, context)
         messages = self._build_messages(
             context=context,
-            system_prompt=self._acting_system_prompt(enabled_tools, context),
+            system_prompt=_acting_sys,
             user_content=self._acting_user_prompt(context, thinking_text),
         )
         messages, _ = self._prepare_messages_with_attachments(messages, context)
@@ -636,6 +671,15 @@ class AgenticChatPipeline:
         )
         self._accumulate_usage(response)
         _usage = getattr(response, "usage", None)
+        _raw_tool_calls = (
+            list(getattr(response.choices[0].message, "tool_calls", None) or [])
+            if response.choices
+            else []
+        )
+        _called_tool_names = [
+            str(getattr(getattr(tc, "function", None), "name", "") or "")
+            for tc in _raw_tool_calls
+        ]
         await stream.llm_call(
             stage="acting",
             capability="chat",
@@ -646,8 +690,18 @@ class AgenticChatPipeline:
             duration_ms=int((_time.time() - _acting_started) * 1000),
             usage_kind="exact",
             source="chat",
-            metadata={"tool_call_count": len(getattr(response.choices[0].message, "tool_calls", None) or [])
-                     if response.choices else 0},
+            metadata=self._build_call_metadata(
+                stage="acting",
+                context=context,
+                system_prompt=_acting_sys,
+                messages=messages,
+                enabled_tools=enabled_tools,
+                tool_schemas=tool_schemas,
+                extra={
+                    "tool_call_count": len(_called_tool_names),
+                    "tool_calls": _called_tool_names,
+                },
+            ),
         )
         if not response.choices:
             return tool_traces
@@ -1014,6 +1068,59 @@ class AgenticChatPipeline:
         )
         return mm_result.messages, mm_result.images_stripped
 
+    def _build_call_metadata(
+        self,
+        *,
+        stage: str,
+        context: UnifiedContext,
+        system_prompt: str = "",
+        messages: list[dict[str, Any]] | None = None,
+        enabled_tools: list[str] | None = None,
+        tool_schemas: list[dict[str, Any]] | None = None,
+        extra: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """
+        Compact, ws-payload-safe summary of what this LLM call carried.
+
+        Avoids shipping the actual prompts (those can be many KB);
+        instead reports byte-sized labels + counts so the dev panel
+        can show "thinking system prompt: 612 chars · 5 messages ·
+        tools=[rag, web_search] · 2 KBs" without bloating the stream.
+        """
+        msgs = messages or []
+        preview = system_prompt[:200] if system_prompt else ""
+        if system_prompt and len(system_prompt) > 200:
+            preview += "…"
+        # Tool schemas can be moderately large dicts. Just summarize:
+        # name + which schema "shape" they follow, no full param JSON.
+        tool_names: list[str] = []
+        for t in tool_schemas or []:
+            fn = t.get("function") if isinstance(t, dict) else None
+            if isinstance(fn, dict) and fn.get("name"):
+                tool_names.append(str(fn["name"]))
+        meta: dict[str, Any] = {
+            "system_prompt_kind": stage,
+            "system_prompt_chars": len(system_prompt or ""),
+            "system_prompt_preview": preview,
+            "messages_count": len(msgs),
+            "messages_chars": sum(
+                len(str(m.get("content", ""))) for m in msgs
+            ),
+            "tools": list(enabled_tools or []),
+            "tool_schemas_count": len(tool_schemas or []),
+            "tool_schema_names": tool_names,
+            "knowledge_bases": list(context.knowledge_bases or []),
+            "skills_context_chars": len(context.skills_context or ""),
+            "memory_context_chars": len(context.memory_context or ""),
+            "notebook_context_chars": len(context.notebook_context or ""),
+            "history_context_chars": len(context.history_context or ""),
+            "attachments_count": len(context.attachments or []),
+            "active_capability": context.active_capability or "chat",
+        }
+        if extra:
+            meta.update(extra)
+        return meta
+
     async def _stream_messages(
         self,
         messages: list[dict[str, Any]],
@@ -1022,6 +1129,7 @@ class AgenticChatPipeline:
         stream: StreamBus | None = None,
         stage: str = "",
         capability: str = "chat",
+        extra_metadata: dict[str, Any] | None = None,
     ):
         import time as _time
 
@@ -1058,6 +1166,7 @@ class AgenticChatPipeline:
                 duration_ms=int((_time.time() - started) * 1000),
                 usage_kind="estimated",
                 source=capability,
+                metadata=extra_metadata,
             )
 
     def _build_openai_client(self):
