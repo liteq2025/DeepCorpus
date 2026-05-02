@@ -78,6 +78,8 @@ import {
   type UiSettings,
 } from "@/lib/settings-helpers";
 import { DimensionField } from "@/components/settings/DimensionField";
+import { EmbeddingProviderHelp } from "@/components/settings/EmbeddingProviderHelp";
+import { LlmProviderHelp } from "@/components/settings/LlmProviderHelp";
 import { SearchProviderHelp } from "@/components/settings/SearchProviderHelp";
 import {
   Select,
@@ -1246,6 +1248,8 @@ function SettingsPageContent() {
               title={effectiveServiceHealthLabel(activeService, status, testStatus, t)}
               aria-label={effectiveServiceHealthLabel(activeService, status, testStatus, t)}
             />
+            {activeService === "llm" && <LlmProviderHelp />}
+            {activeService === "embedding" && <EmbeddingProviderHelp />}
             {activeService === "search" && <SearchProviderHelp />}
           </div>
 

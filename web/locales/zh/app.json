@@ -382,6 +382,8 @@
   "Test passed": "测试通过",
   "Not yet verified": "尚未验证 — 请在本区运行一次测试",
   "How to configure search providers": "搜索 Provider 配置帮助",
+  "How to configure LLM providers": "LLM Provider 配置帮助",
+  "How to configure embedding providers": "Embedding Provider 配置帮助",
   "This key doesn't look like a {{provider}} key (expected to start with {{prefix}}…).": "这看起来不像 {{provider}} 的 Key（应以 {{prefix}}… 开头）。",
   "Link Folder": "关联文件夹",
   "Link Local Folder": "关联本地文件夹",

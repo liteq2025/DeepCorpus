@@ -382,6 +382,8 @@
   "Test passed": "Test passed",
   "Not yet verified": "Not yet verified — run a test in this section",
   "How to configure search providers": "How to configure search providers",
+  "How to configure LLM providers": "How to configure LLM providers",
+  "How to configure embedding providers": "How to configure embedding providers",
   "This key doesn't look like a {{provider}} key (expected to start with {{prefix}}…).": "This key doesn't look like a {{provider}} key (expected to start with {{prefix}}…).",
   "Link Folder": "Link Folder",
   "Link Local Folder": "Link Local Folder",
