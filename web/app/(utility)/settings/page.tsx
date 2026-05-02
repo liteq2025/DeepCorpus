@@ -14,6 +14,7 @@ import {
   BookOpen,
   BookText,
   Brain,
+  Check,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -1257,7 +1258,11 @@ function SettingsPageContent() {
             <div className="grid grid-cols-[200px_1fr] gap-5">
               {/* ── Profile list ── */}
               <div className="space-y-1">
-                {draft.services[activeService].profiles.map((profile) => (
+                {draft.services[activeService].profiles.map((profile) => {
+                  const isActive =
+                    profile.id ===
+                    draft.services[activeService].active_profile_id;
+                  return (
                   <button
                     key={profile.id}
                     onClick={() =>
@@ -1270,21 +1275,32 @@ function SettingsPageContent() {
                         }
                       })
                     }
+                    aria-pressed={isActive}
                     className={`w-full rounded-lg px-3 py-2.5 text-left transition-colors ${
-                      profile.id ===
-                      draft.services[activeService].active_profile_id
+                      isActive
                         ? "bg-[var(--muted)] text-[var(--foreground)]"
                         : "text-[var(--muted-foreground)] hover:bg-[var(--muted)]/50"
                     }`}
                   >
-                    <div className="text-[13px] font-medium">
-                      {profile.name}
-                    </div>
-                    <div className="mt-0.5 truncate text-[11px] text-[var(--muted-foreground)]">
-                      {profile.base_url || t("No endpoint")}
+                    <div className="flex items-start gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[13px] font-medium">
+                          {profile.name}
+                        </div>
+                        <div className="mt-0.5 truncate text-[11px] text-[var(--muted-foreground)]">
+                          {profile.base_url || t("No endpoint")}
+                        </div>
+                      </div>
+                      {isActive && (
+                        <span className="mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                          <Check className="h-2.5 w-2.5" aria-hidden />
+                          {t("In use")}
+                        </span>
+                      )}
                     </div>
                   </button>
-                ))}
+                  );
+                })}
                 <button
                   type="button"
                   data-onboarding="add-profile"
@@ -1582,6 +1598,12 @@ function SettingsPageContent() {
                                   {model.model}
                                 </span>
                               )}
+                              {isOpen && (
+                                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-400">
+                                  <Check className="h-2.5 w-2.5" aria-hidden />
+                                  {t("In use")}
+                                </span>
+                              )}
                               <button
                                 type="button"
                                 onClick={(e) => {
@@ -1809,25 +1831,32 @@ function SettingsPageContent() {
                             ? t("Test failed")
                             : t("Run test")}
                     </div>
-                    {(testSummary || testCompletedAt) && (
-                      <div className="mt-0.5 truncate text-[11px] text-[var(--muted-foreground)]">
-                        {testSummary && <span>{testSummary}</span>}
-                        {testSummary && testCompletedAt && (
-                          <span className="px-1 opacity-50">·</span>
-                        )}
-                        {testCompletedAt && (
-                          <span>{formatTimeAgo(testCompletedAt, language)}</span>
-                        )}
-                      </div>
-                    )}
-                    {testStatus === "idle" && !testCompletedAt && (
-                      <div className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
-                        {t(
-                          "Verifies the active {{service}} profile end-to-end.",
-                          { service: activeService },
-                        )}
-                      </div>
-                    )}
+                    {(() => {
+                      const idleSummary =
+                        testStatus === "idle" && !testCompletedAt
+                          ? buildTestSummary(activeService, draft, {
+                              detected_dim: embeddingCapabilities?.detected_dim,
+                              active_dim: embeddingCapabilities?.active_dim,
+                            })
+                          : null;
+                      const summary = testSummary || idleSummary;
+                      return summary || testCompletedAt ? (
+                        <div className="mt-0.5 truncate text-[11px] text-[var(--muted-foreground)]">
+                          {idleSummary && (
+                            <span className="font-medium text-[var(--foreground)]/70">
+                              {t("In use")}:{" "}
+                            </span>
+                          )}
+                          {summary && <span>{summary}</span>}
+                          {summary && testCompletedAt && (
+                            <span className="px-1 opacity-50">·</span>
+                          )}
+                          {testCompletedAt && (
+                            <span>{formatTimeAgo(testCompletedAt, language)}</span>
+                          )}
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
                 <button

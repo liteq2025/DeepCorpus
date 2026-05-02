@@ -381,6 +381,7 @@
   "Test failed": "测试失败",
   "Test passed": "测试通过",
   "Not yet verified": "尚未验证 — 请在本区运行一次测试",
+  "In use": "使用中",
   "How to configure search providers": "搜索 Provider 配置帮助",
   "How to configure LLM providers": "LLM Provider 配置帮助",
   "How to configure embedding providers": "Embedding Provider 配置帮助",

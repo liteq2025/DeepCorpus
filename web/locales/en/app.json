@@ -381,6 +381,7 @@
   "Test failed": "Test failed",
   "Test passed": "Test passed",
   "Not yet verified": "Not yet verified — run a test in this section",
+  "In use": "In use",
   "How to configure search providers": "How to configure search providers",
   "How to configure LLM providers": "How to configure LLM providers",
   "How to configure embedding providers": "How to configure embedding providers",
