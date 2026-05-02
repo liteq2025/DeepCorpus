@@ -1,7 +1,14 @@
 /* eslint-disable i18n/no-literal-ui-text */
 "use client";
 
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import {
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Brain,
   CheckCircle2,
@@ -80,6 +87,33 @@ function serviceHealthDot(
     Boolean(status.search.provider),
     Boolean(status.search.error),
   );
+}
+
+/**
+ * Count field-level differences between two catalog values. Walks both
+ * trees in parallel and increments per leaf-field mismatch (or per
+ * extra/missing field at any level), so adding a brand-new profile
+ * registers as ~one diff per field on that profile — close enough to
+ * "size of the change" for the pending banner.
+ */
+function countDiffs(a: unknown, b: unknown): number {
+  if (a === b) return 0;
+  const ao = a == null ? null : typeof a;
+  const bo = b == null ? null : typeof b;
+  if (ao !== "object" || bo !== "object") return 1;
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b)) return 1;
+    let count = Math.abs(a.length - b.length);
+    const min = Math.min(a.length, b.length);
+    for (let i = 0; i < min; i++) count += countDiffs(a[i], b[i]);
+    return count;
+  }
+  const oa = a as Record<string, unknown>;
+  const ob = b as Record<string, unknown>;
+  const keys = new Set([...Object.keys(oa), ...Object.keys(ob)]);
+  let count = 0;
+  for (const k of keys) count += countDiffs(oa[k], ob[k]);
+  return count;
 }
 
 function buildTestSummary(
@@ -313,6 +347,13 @@ function SettingsPageContent() {
   const [language, setLanguage] = useState<"en" | "zh">("en");
   const [catalog, setCatalog] = useState<Catalog>(defaultCatalog());
   const [draft, setDraft] = useState<Catalog>(defaultCatalog());
+  // Snapshot of the catalog at the moment of the most recent /apply (or
+  // initial bootstrap, since startup state == what's currently in .env).
+  // Drives the "N changes pending" banner — diffs against `catalog`, not
+  // `draft`, because auto-save lands in catalog before Apply is clicked.
+  const [appliedCatalog, setAppliedCatalog] =
+    useState<Catalog>(defaultCatalog());
+  const [lastAppliedAt, setLastAppliedAt] = useState<number | null>(null);
   const [activeSection, setActiveSection] = useState<Section>("preferences");
   const [activeService, setActiveService] = useState<ServiceName>("llm");
   const [logs, setLogs] = useState<string>("Waiting for test run...");
@@ -352,6 +393,7 @@ function SettingsPageContent() {
         (await settingsResponse.json()) as SettingsPayload;
       setCatalog(settingsPayload.catalog);
       setDraft(cloneCatalog(settingsPayload.catalog));
+      setAppliedCatalog(cloneCatalog(settingsPayload.catalog));
       setTheme(settingsPayload.ui.theme);
       setLanguage(settingsPayload.ui.language);
       if (settingsPayload.providers) setProviders(settingsPayload.providers);
@@ -413,6 +455,10 @@ function SettingsPageContent() {
 
   const activeProfile = getActiveProfile(draft, activeService);
   const activeModel = getActiveModel(draft, activeService);
+  const pendingChangeCount = useMemo(
+    () => countDiffs(catalog, appliedCatalog),
+    [catalog, appliedCatalog],
+  );
   const searchProviderRaw =
     activeService === "search"
       ? (activeProfile?.provider || "").trim().toLowerCase()
@@ -690,6 +736,8 @@ function SettingsPageContent() {
       const payload = await response.json();
       setCatalog(payload.catalog);
       setDraft(cloneCatalog(payload.catalog));
+      setAppliedCatalog(cloneCatalog(payload.catalog));
+      setLastAppliedAt(Date.now());
       toast.success(t("Applied to .env"));
       const statusResponse = await fetch(apiUrl("/api/v1/system/status"));
       setStatus((await statusResponse.json()) as SystemStatus);
@@ -845,7 +893,7 @@ function SettingsPageContent() {
             onSelect={selectSection}
             status={status}
           />
-          <div className="mt-auto space-y-2 px-1 pt-4">
+          <div className="mt-auto px-1 pt-4">
             <div
               className="flex items-center gap-1.5 rounded-md bg-[var(--muted)]/30 px-2 py-1 text-[11px] text-[var(--muted-foreground)]"
               title={
@@ -865,41 +913,14 @@ function SettingsPageContent() {
                   : t("offline")}
               </span>
             </div>
-            <button
-              type="button"
-              data-tour="tour-actions"
-              onClick={applyCatalog}
-              disabled={applying || saving}
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--foreground)] px-3 py-1.5 text-[12px] font-medium text-[var(--background)] transition-opacity hover:opacity-80 disabled:opacity-40"
-            >
-              {applying ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <Wand2 className="h-3 w-3" />
-              )}
-              {t("Apply")}
-            </button>
-            <button
-              type="button"
-              onClick={runTour}
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--border)]/50 px-3 py-1.5 text-[12px] text-[var(--muted-foreground)] transition-colors hover:border-[var(--border)] hover:text-[var(--foreground)]"
-            >
-              <Rocket className="h-3 w-3" />
-              {t("Tour")}
-            </button>
-            {saving && (
-              <p className="pt-1 text-center text-[10.5px] text-[var(--muted-foreground)]">
-                {t("Saving…")}
-              </p>
-            )}
           </div>
         </div>
       </ListPane>
       <section
         aria-label="Settings content"
-        className="flex-1 overflow-y-auto [scrollbar-gutter:stable]"
+        className="relative flex flex-1 flex-col overflow-y-auto [scrollbar-gutter:stable]"
       >
-      <div className="mx-auto max-w-[960px] px-6 py-8">
+      <div className="mx-auto w-full max-w-[960px] flex-1 px-6 py-8">
         {activeSection === "preferences" && (
         <div className="space-y-6">
           <div className="flex items-center gap-2">
@@ -942,6 +963,25 @@ function SettingsPageContent() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="border-t border-[var(--border)]/50 pt-5">
+            <div className="mb-1.5 text-[12px] font-medium text-[var(--foreground)]">
+              {t("Onboarding")}
+            </div>
+            <p className="mb-2.5 text-[11px] text-[var(--muted-foreground)]">
+              {t(
+                "Step through the highlights of every Models section.",
+              )}
+            </p>
+            <button
+              type="button"
+              onClick={runTour}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-3 py-1.5 text-[12px] text-[var(--foreground)] transition-colors hover:bg-[var(--muted)]"
+            >
+              <Rocket className="h-3 w-3" />
+              {t("Show settings tour")}
+            </button>
           </div>
         </div>
         )}
@@ -1559,6 +1599,52 @@ function SettingsPageContent() {
         <p className="mt-2 pb-4 text-[11px] leading-relaxed text-[var(--muted-foreground)]/40">
           {t("settings.configNote")}
         </p>
+      </div>
+
+      {/* ── Sticky Apply bar (P1) ── */}
+      <div className="sticky bottom-0 z-10 border-t border-[var(--border)] bg-[var(--card)] shadow-[0_-4px_12px_rgba(0,0,0,0.04)]">
+        <div className="mx-auto flex w-full max-w-[960px] items-center justify-between gap-3 px-6 py-3">
+          <div className="min-w-0 text-[12px] text-[var(--muted-foreground)]">
+            {pendingChangeCount > 0 ? (
+              <span>
+                <span className="font-medium text-[var(--foreground)]">
+                  {pendingChangeCount}
+                </span>{" "}
+                {t("change(s) pending", { count: pendingChangeCount })}
+                {saving && (
+                  <span className="ml-2 text-[var(--muted-foreground)]/70">
+                    · {t("Saving…")}
+                  </span>
+                )}
+              </span>
+            ) : (
+              <span>
+                {t("All changes applied")}
+                {lastAppliedAt && (
+                  <span className="ml-1 text-[var(--muted-foreground)]/70">
+                    · {formatTimeAgo(lastAppliedAt, language)}
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            data-tour="tour-actions"
+            onClick={applyCatalog}
+            disabled={
+              applying || saving || pendingChangeCount === 0
+            }
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--foreground)] px-3 py-1.5 text-[12px] font-medium text-[var(--background)] transition-opacity hover:opacity-80 disabled:opacity-40"
+          >
+            {applying ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Wand2 className="h-3 w-3" />
+            )}
+            {t("Apply")}
+          </button>
+        </div>
       </div>
       </section>
 
