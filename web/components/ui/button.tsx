@@ -67,10 +67,35 @@ function Button({
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> &
   ForkButtonProps) {
-  const Comp = asChild ? Slot.Root : "button"
+  // asChild → Radix Slot, which requires a SINGLE React element child.
+  // The loader/icon slot must NOT be rendered alongside children in that
+  // mode; it would inflate the array to length 2 and Slot's SlotClone
+  // throws via React.Children.only(null). asChild call-sites don't use
+  // loading/icon (e.g. AlertDialog Cancel/Action just pass through their
+  // primitive), so passing children verbatim is the right behavior.
+  if (asChild) {
+    // Slot.Root's prop type doesn't model `disabled` — it forwards everything
+    // to the single child element. Cast the merged prop bag to keep TS happy
+    // while still letting the underlying button receive disabled.
+    const slotProps = {
+      ...props,
+      disabled: disabled || loading,
+    } as React.ComponentProps<typeof Slot.Root>
+    return (
+      <Slot.Root
+        data-slot="button"
+        data-variant={variant}
+        data-size={size}
+        className={cn(buttonVariants({ variant, size, className }))}
+        {...slotProps}
+      >
+        {children}
+      </Slot.Root>
+    )
+  }
 
   return (
-    <Comp
+    <button
       data-slot="button"
       data-variant={variant}
       data-size={size}
@@ -84,7 +109,7 @@ function Button({
         icon
       ) : null}
       {children}
-    </Comp>
+    </button>
   )
 }
 
