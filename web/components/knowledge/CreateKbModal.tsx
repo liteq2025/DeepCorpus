@@ -13,6 +13,13 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type {
   KnowledgeUploadPolicy,
   RagProviderSummary,
@@ -127,18 +134,22 @@ export default function CreateKbModal({
             <label className="mb-1 block text-[11px] font-medium uppercase tracking-wide text-[var(--muted-foreground)]">
               {t("RAG provider")}
             </label>
-            <select
+            <Select
               value={provider}
-              onChange={(event) => setProvider(event.target.value)}
+              onValueChange={setProvider}
               disabled={submitting}
-              className="w-full rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 text-[13px] text-[var(--foreground)] outline-none disabled:opacity-50"
             >
-              {providers.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full text-[13px]">
+                <SelectValue placeholder={t("Select provider")} />
+              </SelectTrigger>
+              <SelectContent>
+                {providers.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>

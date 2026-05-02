@@ -19,6 +19,7 @@ import {
   X,
 } from "lucide-react";
 import SpaceSectionHeader from "@/components/space/SpaceSectionHeader";
+import { Badge } from "@/components/ui/badge";
 import { useConfirm } from "@/components/layout";
 import {
   createCategory,
@@ -199,9 +200,9 @@ export default function QuestionBankSection() {
           "Review and organize quiz questions across sessions. Bookmark items, group them into categories, and jump back to the original chat.",
         )}
         meta={
-          <span className="rounded-full border border-[var(--border)] bg-[var(--card)] px-2 py-0.5 text-[10.5px] font-medium text-[var(--muted-foreground)]">
+          <Badge variant="outline">
             {total} {t("questions.count.suffix")}
-          </span>
+          </Badge>
         }
       />
 
@@ -217,9 +218,9 @@ export default function QuestionBankSection() {
             <FolderOpen className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
             {t("Manage Categories")}
             {categories.length > 0 && (
-              <span className="rounded-full bg-[var(--muted)] px-1.5 py-0.5 text-[10px] text-[var(--muted-foreground)]">
+              <Badge variant="secondary" className="tabular-nums">
                 {categories.length}
-              </span>
+              </Badge>
             )}
           </span>
           <ChevronDown

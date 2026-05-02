@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { useAppShell } from "@/context/AppShellContext";
 import { apiUrl } from "@/lib/api";
 import SpaceSectionHeader from "@/components/space/SpaceSectionHeader";
+import { Badge } from "@/components/ui/badge";
 import { useConfirm } from "@/components/layout";
 
 const MarkdownRenderer = dynamic(
@@ -219,13 +220,11 @@ export default function MemorySection() {
         )}
         meta={
           toast ? (
-            <span className="rounded-full border border-[var(--primary)]/30 bg-[var(--primary)]/10 px-2 py-0.5 text-[10.5px] font-medium text-[var(--primary)]">
-              {toast}
-            </span>
+            <Badge>{toast}</Badge>
           ) : (
-            <span className="rounded-full border border-[var(--border)] bg-[var(--card)] px-2 py-0.5 text-[10.5px] font-medium text-[var(--muted-foreground)]">
+            <Badge variant="outline">
               {hasChanges ? t("Unsaved changes") : t("All changes saved")}
-            </span>
+            </Badge>
           )
         }
         action={

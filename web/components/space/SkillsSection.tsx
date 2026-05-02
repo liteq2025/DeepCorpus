@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import SpaceSectionHeader from "@/components/space/SpaceSectionHeader";
+import { Badge } from "@/components/ui/badge";
 import { useConfirm } from "@/components/layout";
 import {
   createSkill,
@@ -328,9 +329,9 @@ export default function SkillsSection() {
           "Short markdown playbooks that shape the assistant's behavior. Pick one from the composer or let Auto choose.",
         )}
         meta={
-          <span className="rounded-full border border-[var(--border)] bg-[var(--card)] px-2 py-0.5 text-[10.5px] font-medium text-[var(--muted-foreground)]">
+          <Badge variant="outline">
             {skills.length} {t("skills.count.suffix")}
-          </span>
+          </Badge>
         }
         action={
           <button
@@ -362,9 +363,9 @@ export default function SkillsSection() {
               className="text-[var(--muted-foreground)]"
             />
             {t("Manage Tags")}
-            <span className="rounded-full bg-[var(--muted)] px-1.5 py-0.5 text-[10px] tabular-nums text-[var(--muted-foreground)]">
+            <Badge variant="secondary" className="tabular-nums">
               {tagVocab.length}
-            </span>
+            </Badge>
           </span>
           <ChevronDown
             size={14}

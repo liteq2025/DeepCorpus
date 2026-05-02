@@ -10,6 +10,13 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import type { Chapter, ContentType, Spine } from "@/lib/book-types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 /**
  * Each chapter declares a *content type* — a hint to the SectionArchitect
@@ -165,8 +172,8 @@ export default function SpineEditor({
               </div>
 
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <label className="text-xs text-[var(--muted-foreground)]">
-                  <span className="flex items-center gap-1">
+                <div className="text-xs text-[var(--muted-foreground)]">
+                  <div className="flex items-center gap-1">
                     Content type
                     <span
                       className="cursor-help text-[10px] opacity-60"
@@ -174,29 +181,31 @@ export default function SpineEditor({
                     >
                       ⓘ
                     </span>
-                  </span>
-                  <select
+                  </div>
+                  <Select
                     value={chapter.content_type}
-                    onChange={(e) =>
-                      updateChapter(idx, {
-                        content_type: e.target.value as ContentType,
-                      })
+                    onValueChange={(v) =>
+                      updateChapter(idx, { content_type: v as ContentType })
                     }
-                    className="mt-1 w-full rounded-md border border-[var(--border)] bg-[var(--background)] px-2 py-1.5 text-sm text-[var(--foreground)]"
                   >
-                    {CONTENT_TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="mt-1 w-full text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CONTENT_TYPE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <span className="mt-1 block text-[11px] leading-snug text-[var(--muted-foreground)]/80">
                     {CONTENT_TYPE_OPTIONS.find(
                       (o) => o.value === chapter.content_type,
                     )?.description ||
                       "Hint for the architect about what blocks to plan."}
                   </span>
-                </label>
+                </div>
                 <label className="text-xs text-[var(--muted-foreground)]">
                   Summary
                   <input

@@ -35,6 +35,13 @@ import {
   type SessionMessage,
   type SessionSummary,
 } from "@/lib/session-api";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type SourceTab = "knowledge" | "notebooks" | "questions" | "chats";
 
@@ -665,17 +672,20 @@ export default function BookCreator({
             </div>
 
             <div className="flex items-center justify-between gap-3">
-              <label className="text-xs text-[var(--muted-foreground)]">
-                Language{" "}
-                <select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  className="ml-1 rounded-md border border-[var(--border)] bg-[var(--background)] px-1.5 py-0.5 text-xs text-[var(--foreground)]"
-                >
-                  <option value="en">English</option>
-                  <option value="zh">中文</option>
-                </select>
-              </label>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs text-[var(--muted-foreground)]">
+                  Language
+                </span>
+                <Select value={language} onValueChange={setLanguage}>
+                  <SelectTrigger size="sm" className="text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="zh">中文</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <button
                 onClick={handleCreate}
                 disabled={loading || !intent.trim()}

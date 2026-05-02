@@ -19,6 +19,7 @@ import {
   Trash2,
 } from "lucide-react";
 import SpaceSectionHeader from "@/components/space/SpaceSectionHeader";
+import { Badge } from "@/components/ui/badge";
 import { useConfirm } from "@/components/layout";
 import {
   createNotebook,
@@ -232,9 +233,9 @@ export default function NotebooksSection() {
           "Save and organize outputs from chat, research, and Co-Writer sessions into a personal library.",
         )}
         meta={
-          <span className="rounded-full border border-[var(--border)] bg-[var(--card)] px-2 py-0.5 text-[10.5px] font-medium text-[var(--muted-foreground)]">
+          <Badge variant="outline">
             {notebooks.length} {t("notebooks.count.suffix")}
-          </span>
+          </Badge>
         }
       />
 
@@ -281,9 +282,9 @@ export default function NotebooksSection() {
             <h2 className="text-[13.5px] font-semibold text-[var(--foreground)]">
               {t("Your notebooks")}
             </h2>
-            <span className="rounded-full bg-[var(--muted)] px-1.5 py-0.5 text-[10px] tabular-nums text-[var(--muted-foreground)]">
+            <Badge variant="secondary" className="tabular-nums">
               {notebooks.length}
-            </span>
+            </Badge>
           </div>
           <span className="text-[11.5px] text-[var(--muted-foreground)]">
             {t("Click a notebook to inspect its records.")}
