@@ -6,6 +6,7 @@ import {
   Brain,
   CheckCircle2,
   ChevronDown,
+  ChevronRight,
   CircleDashed,
   Database,
   Eye,
@@ -86,17 +87,20 @@ function buildTestSummary(
   draft: Catalog,
   caps: { detected_dim?: number; active_dim?: number },
 ): string {
+  const profile = getActiveProfile(draft, service);
+  const profileLabel = profile?.name ?? "—";
   if (service === "search") {
-    const profile = getActiveProfile(draft, "search");
-    return profile?.provider || "—";
+    const provider = profile?.provider || "—";
+    return `${profileLabel} · ${provider}`;
   }
   const model = getActiveModel(draft, service);
   const modelLabel = model?.model || model?.name || "—";
   if (service === "embedding") {
     const dim = caps.active_dim ?? caps.detected_dim;
-    return dim ? `${modelLabel} · ${dim}d` : modelLabel;
+    const tail = dim ? `${modelLabel} · ${dim}d` : modelLabel;
+    return `${profileLabel} · ${tail}`;
   }
-  return modelLabel;
+  return `${profileLabel} · ${modelLabel}`;
 }
 
 function formatTimeAgo(ts: number, locale: "en" | "zh"): string {
@@ -373,14 +377,20 @@ function SettingsPageContent() {
     draft.services.embedding.active_model_id,
   ]);
 
-  // Switching service tabs clears the previous run's banner + log buffer
-  // so the next view starts blank instead of showing a foreign result.
+  // Switching service tabs OR active profile clears the previous run's
+  // banner + log buffer so the next view starts blank instead of showing
+  // a stale result tied to a different (service, profile) pair.
   useEffect(() => {
     setTestStatus("idle");
     setTestSummary("");
     setTestCompletedAt(null);
     setLogs("Waiting for test run...");
-  }, [activeService]);
+  }, [
+    activeService,
+    draft.services.llm.active_profile_id,
+    draft.services.embedding.active_profile_id,
+    draft.services.search.active_profile_id,
+  ]);
 
   // -- Tour guide auto-switch active service tab --------------------------
 
@@ -536,22 +546,6 @@ function SettingsPageContent() {
     });
   };
 
-  const removeActiveModel = () => {
-    if (activeService === "search") return;
-    mutateCatalog((next) => {
-      const service = next.services[activeService];
-      const profile =
-        service.profiles.find(
-          (item) => item.id === service.active_profile_id,
-        ) ?? null;
-      if (!profile) return;
-      profile.models = profile.models.filter(
-        (item) => item.id !== service.active_model_id,
-      );
-      service.active_model_id = profile.models[0]?.id ?? null;
-    });
-  };
-
   const confirmDeleteProfile = async () => {
     if (!activeProfile) return;
     const modelCount = activeProfile.models?.length ?? 0;
@@ -571,16 +565,28 @@ function SettingsPageContent() {
     removeActiveProfile();
   };
 
-  const confirmDeleteModel = async () => {
-    if (!activeModel) return;
+  const confirmDeleteModel = async (modelId: string) => {
+    if (activeService === "search") return;
+    const profileSnapshot = activeProfile;
+    if (!profileSnapshot) return;
+    const model = profileSnapshot.models.find((m) => m.id === modelId);
+    if (!model) return;
     const ok = await confirm({
-      title: t('Delete model "{{name}}"?', { name: activeModel.name }),
+      title: t('Delete model "{{name}}"?', { name: model.name }),
       description: t("This cannot be undone."),
       confirmLabel: t("Delete"),
       destructive: true,
     });
     if (!ok) return;
-    removeActiveModel();
+    mutateCatalog((next) => {
+      const svc = next.services[activeService];
+      const p = svc.profiles.find((x) => x.id === profileSnapshot.id);
+      if (!p) return;
+      p.models = p.models.filter((m) => m.id !== modelId);
+      if (svc.active_model_id === modelId) {
+        svc.active_model_id = p.models[0]?.id ?? null;
+      }
+    });
   };
 
   const updateProfileField = (field: keyof CatalogProfile, value: string) => {
@@ -944,40 +950,20 @@ function SettingsPageContent() {
         <>
         {/* ── Service Configuration ── */}
         <div className="mb-8">
-          <div className="mb-5 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h2 className="text-[16px] font-semibold text-[var(--foreground)]">
-                {t(activeService === "llm"
-                  ? "LLM"
-                  : activeService === "embedding"
-                    ? "Embedding"
-                    : "Search")}
-              </h2>
-              <span
-                data-tour={`tour-${activeService}`}
-                className={`inline-block h-2 w-2 rounded-full ${serviceHealthDot(activeService, status)}`}
-                title={serviceHealthLabel(activeService, status, t)}
-                aria-label={serviceHealthLabel(activeService, status, t)}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={addProfile}
-                className="inline-flex items-center gap-1 rounded-lg border border-[var(--border)]/50 px-2.5 py-1 text-[12px] text-[var(--muted-foreground)] transition-colors hover:border-[var(--border)] hover:text-[var(--foreground)]"
-              >
-                <Plus className="h-3 w-3" />
-                {t("Profile")}
-              </button>
-              {activeService !== "search" && (
-                <button
-                  onClick={addModel}
-                  className="inline-flex items-center gap-1 rounded-lg border border-[var(--border)]/50 px-2.5 py-1 text-[12px] text-[var(--muted-foreground)] transition-colors hover:border-[var(--border)] hover:text-[var(--foreground)]"
-                >
-                  <Plus className="h-3 w-3" />
-                  {t("Model")}
-                </button>
-              )}
-            </div>
+          <div className="mb-5 flex items-center gap-2">
+            <h2 className="text-[16px] font-semibold text-[var(--foreground)]">
+              {t(activeService === "llm"
+                ? "LLM"
+                : activeService === "embedding"
+                  ? "Embedding"
+                  : "Search")}
+            </h2>
+            <span
+              data-tour={`tour-${activeService}`}
+              className={`inline-block h-2 w-2 rounded-full ${serviceHealthDot(activeService, status)}`}
+              title={serviceHealthLabel(activeService, status, t)}
+              aria-label={serviceHealthLabel(activeService, status, t)}
+            />
           </div>
 
           {activeProfile ? (
@@ -1012,6 +998,14 @@ function SettingsPageContent() {
                     </div>
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={addProfile}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--border)] px-3 py-2 text-[12px] text-[var(--muted-foreground)] transition-colors hover:border-[var(--foreground)]/40 hover:bg-[var(--muted)]/40 hover:text-[var(--foreground)]"
+                >
+                  <Plus className="h-3 w-3" />
+                  {t("Add profile")}
+                </button>
               </div>
 
               {/* ── Editor ── */}
@@ -1231,188 +1225,220 @@ function SettingsPageContent() {
 
                 {activeService !== "search" && (
                   <div className="rounded-xl border border-[var(--border)] p-5">
-                    <div className="mb-4 flex items-center justify-between gap-3">
-                      <span className="text-[13px] font-medium text-[var(--foreground)]">
-                        {t("Models")}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => void confirmDeleteModel()}
-                        disabled={!activeModel}
-                        className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-[var(--muted-foreground)] transition-colors hover:bg-red-500/10 hover:text-red-500 disabled:opacity-30"
-                        title={
-                          activeModel
-                            ? t('Delete model "{{name}}"', {
-                                name: activeModel.name,
-                              })
-                            : t("Delete model")
-                        }
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        {activeModel
-                          ? t('Delete "{{name}}"', { name: activeModel.name })
-                          : t("Delete model")}
-                      </button>
+                    <div className="mb-3 text-[13px] font-medium text-[var(--foreground)]">
+                      {t("Models")}
                     </div>
-                    {activeProfile.models.length > 0 && (
-                      <div className="mb-4 flex flex-wrap gap-1.5">
-                        {activeProfile.models.map((model) => (
-                          <button
+                    <div className="space-y-2">
+                      {activeProfile.models.map((model) => {
+                        const isOpen =
+                          model.id ===
+                          draft.services[activeService].active_model_id;
+                        return (
+                          <div
                             key={model.id}
-                            onClick={() =>
-                              mutateCatalog((next) => {
-                                next.services[activeService].active_model_id =
-                                  model.id;
-                              })
-                            }
-                            className={`rounded-lg px-3 py-1.5 text-[13px] transition-colors ${
-                              model.id ===
-                              draft.services[activeService].active_model_id
-                                ? "bg-[var(--muted)] font-medium text-[var(--foreground)]"
-                                : "text-[var(--muted-foreground)] hover:bg-[var(--muted)]/50"
+                            className={`overflow-hidden rounded-lg border transition-colors ${
+                              isOpen
+                                ? "border-[var(--primary)]/40 bg-[var(--card)]"
+                                : "border-[var(--border)]/60 bg-[var(--card)]/30"
                             }`}
                           >
-                            {model.name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {activeModel && (
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div>
-                          <div className="mb-1.5 text-[12px] text-[var(--muted-foreground)]">
-                            {t("Label")}
-                          </div>
-                          <input
-                            className={inputClass}
-                            value={activeModel.name}
-                            onChange={(e) =>
-                              updateModelField("name", e.target.value)
-                            }
-                          />
-                        </div>
-                        <div>
-                          <div className="mb-1.5 text-[12px] text-[var(--muted-foreground)]">
-                            {t("Model ID")}
-                          </div>
-                          <input
-                            className={inputClass}
-                            value={activeModel.model}
-                            onChange={(e) =>
-                              updateModelField("model", e.target.value)
-                            }
-                            placeholder="gpt-4o"
-                          />
-                        </div>
-                        {activeService === "llm" && (
-                          <>
-                            <div>
-                              <div className="mb-1.5 text-[12px] text-[var(--muted-foreground)]">
-                                {t("Context Window")}
-                              </div>
-                              <input
-                                className={inputClass}
-                                inputMode="numeric"
-                                value={activeModel.context_window || ""}
-                                onChange={(e) =>
-                                  updateContextWindowField(e.target.value)
-                                }
-                                placeholder="65536"
+                            <div
+                              className={`group flex items-center gap-2 px-3 py-2 ${
+                                isOpen ? "" : "cursor-pointer hover:bg-[var(--muted)]/40"
+                              }`}
+                              onClick={() => {
+                                if (!isOpen)
+                                  mutateCatalog((next) => {
+                                    next.services[activeService].active_model_id =
+                                      model.id;
+                                  });
+                              }}
+                            >
+                              <ChevronRight
+                                className={`h-3.5 w-3.5 shrink-0 text-[var(--muted-foreground)] transition-transform ${
+                                  isOpen ? "rotate-90" : ""
+                                }`}
+                                aria-hidden
                               />
-                            </div>
-                            <div className="rounded-xl border border-[var(--border)]/70 bg-[var(--muted)]/30 px-3.5 py-3">
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--muted-foreground)]/70">
-                                  {t("Source")}
-                                </div>
-                                <span className="rounded-full border border-[var(--border)]/70 bg-[var(--card)] px-2.5 py-1 text-[11px] font-medium text-[var(--foreground)]">
-                                  {formatContextWindowSource(
-                                    activeModel.context_window_source,
-                                    t,
-                                  )}
-                                </span>
-                              </div>
-                              <p className="mt-2 text-[12px] leading-relaxed text-[var(--muted-foreground)]">
-                                {activeModel.context_window_source ===
-                                "metadata"
-                                  ? t(
-                                      "Detected from the provider during the latest LLM test and saved into model_catalog.json.",
-                                    )
-                                  : activeModel.context_window_source ===
-                                      "default"
-                                    ? t(
-                                        "The provider did not expose a context window, so the runtime fallback was saved during the latest LLM test.",
-                                      )
-                                    : activeModel.context_window_source ===
-                                        "manual"
-                                      ? t(
-                                          "Manual override from Settings. Auto-saves once you stop typing.",
-                                        )
-                                      : t(
-                                          "Run the LLM test to auto-fill this field, or enter a value manually.",
-                                        )}
-                              </p>
-                              {activeModel.context_window_detected_at && (
-                                <div className="mt-2 text-[11px] text-[var(--muted-foreground)]/70">
-                                  {t("Detected at")}:{" "}
-                                  {formatContextWindowUpdatedAt(
-                                    activeModel.context_window_detected_at,
-                                    language,
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </>
-                        )}
-                        {activeService === "embedding" && (
-                          <div>
-                            <div className="mb-1.5 flex items-center justify-between gap-2">
-                              <span className="text-[12px] text-[var(--muted-foreground)]">
-                                {t("Dimension")}
+                              <span className="truncate text-[13px] font-medium text-[var(--foreground)]">
+                                {model.name}
                               </span>
-                              <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-[var(--muted-foreground)] select-none">
-                                <input
-                                  type="checkbox"
-                                  className="h-3 w-3 cursor-pointer accent-[var(--foreground)]"
-                                  checked={activeModel.send_dimensions !== false}
-                                  onChange={(e) =>
-                                    updateModelBoolField(
-                                      "send_dimensions",
-                                      e.target.checked,
-                                    )
-                                  }
-                                />
-                                <span>{t("Send dimensions")}</span>
-                                <span
-                                  tabIndex={0}
-                                  className="group/info relative inline-flex cursor-help focus:outline-none"
-                                >
-                                  <Info className="h-3 w-3 opacity-50 transition-opacity group-hover/info:opacity-100 group-focus/info:opacity-100" />
-                                  <span
-                                    role="tooltip"
-                                    className="pointer-events-none absolute top-full left-1/2 z-20 mt-1.5 w-64 -translate-x-1/2 rounded-lg border border-[var(--border)] bg-[var(--card)] p-2.5 text-[11px] leading-relaxed text-[var(--foreground)] opacity-0 shadow-lg transition-opacity duration-75 group-hover/info:opacity-100 group-focus/info:opacity-100"
-                                  >
-                                    {t(
-                                      "Some embedding models (e.g. Qwen text-embedding-v4) reject the `dimensions` request param. Turn this off if your provider returns HTTP 400.",
-                                    )}
-                                  </span>
+                              {model.model && (
+                                <span className="truncate font-mono text-[11px] text-[var(--muted-foreground)]">
+                                  {model.model}
                                 </span>
-                              </label>
+                              )}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void confirmDeleteModel(model.id);
+                                }}
+                                title={t('Delete model "{{name}}"', {
+                                  name: model.name,
+                                })}
+                                aria-label={t('Delete model "{{name}}"', {
+                                  name: model.name,
+                                })}
+                                className="ml-auto rounded p-1 text-[var(--muted-foreground)]/60 opacity-0 transition-opacity hover:bg-red-500/10 hover:text-red-500 focus:opacity-100 group-hover:opacity-100"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
                             </div>
-                            <DimensionField
-                              activeModel={activeModel}
-                              activeBinding={activeProfile?.binding}
-                              capabilities={embeddingCapabilities}
-                              embeddingDefaultDim={embeddingDefaultDim}
-                              inputClass={inputClass}
-                              onChangeDimension={(value) =>
-                                updateModelField("dimension", value)
-                              }
-                            />
+                            {isOpen && (
+                              <div className="border-t border-[var(--border)]/60 p-4">
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                  <div>
+                                    <div className="mb-1.5 text-[12px] text-[var(--muted-foreground)]">
+                                      {t("Label")}
+                                    </div>
+                                    <input
+                                      className={inputClass}
+                                      value={model.name}
+                                      onChange={(e) =>
+                                        updateModelField("name", e.target.value)
+                                      }
+                                    />
+                                  </div>
+                                  <div>
+                                    <div className="mb-1.5 text-[12px] text-[var(--muted-foreground)]">
+                                      {t("Model ID")}
+                                    </div>
+                                    <input
+                                      className={inputClass}
+                                      value={model.model}
+                                      onChange={(e) =>
+                                        updateModelField("model", e.target.value)
+                                      }
+                                      placeholder="gpt-4o"
+                                    />
+                                  </div>
+                                  {activeService === "llm" && (
+                                    <>
+                                      <div>
+                                        <div className="mb-1.5 text-[12px] text-[var(--muted-foreground)]">
+                                          {t("Context Window")}
+                                        </div>
+                                        <input
+                                          className={inputClass}
+                                          inputMode="numeric"
+                                          value={model.context_window || ""}
+                                          onChange={(e) =>
+                                            updateContextWindowField(
+                                              e.target.value,
+                                            )
+                                          }
+                                          placeholder="65536"
+                                        />
+                                      </div>
+                                      <div className="rounded-xl border border-[var(--border)]/70 bg-[var(--muted)]/30 px-3.5 py-3">
+                                        <div className="flex items-center justify-between gap-3">
+                                          <div className="text-[11px] uppercase tracking-[0.16em] text-[var(--muted-foreground)]/70">
+                                            {t("Source")}
+                                          </div>
+                                          <span className="rounded-full border border-[var(--border)]/70 bg-[var(--card)] px-2.5 py-1 text-[11px] font-medium text-[var(--foreground)]">
+                                            {formatContextWindowSource(
+                                              model.context_window_source,
+                                              t,
+                                            )}
+                                          </span>
+                                        </div>
+                                        <p className="mt-2 text-[12px] leading-relaxed text-[var(--muted-foreground)]">
+                                          {model.context_window_source ===
+                                          "metadata"
+                                            ? t(
+                                                "Detected from the provider during the latest LLM test and saved into model_catalog.json.",
+                                              )
+                                            : model.context_window_source ===
+                                                "default"
+                                              ? t(
+                                                  "The provider did not expose a context window, so the runtime fallback was saved during the latest LLM test.",
+                                                )
+                                              : model.context_window_source ===
+                                                  "manual"
+                                                ? t(
+                                                    "Manual override from Settings. Auto-saves once you stop typing.",
+                                                  )
+                                                : t(
+                                                    "Run the LLM test to auto-fill this field, or enter a value manually.",
+                                                  )}
+                                        </p>
+                                        {model.context_window_detected_at && (
+                                          <div className="mt-2 text-[11px] text-[var(--muted-foreground)]/70">
+                                            {t("Detected at")}:{" "}
+                                            {formatContextWindowUpdatedAt(
+                                              model.context_window_detected_at,
+                                              language,
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </>
+                                  )}
+                                  {activeService === "embedding" && (
+                                    <div>
+                                      <div className="mb-1.5 flex items-center justify-between gap-2">
+                                        <span className="text-[12px] text-[var(--muted-foreground)]">
+                                          {t("Dimension")}
+                                        </span>
+                                        <label className="inline-flex cursor-pointer items-center gap-1.5 text-[11px] text-[var(--muted-foreground)] select-none">
+                                          <input
+                                            type="checkbox"
+                                            className="h-3 w-3 cursor-pointer accent-[var(--foreground)]"
+                                            checked={
+                                              model.send_dimensions !== false
+                                            }
+                                            onChange={(e) =>
+                                              updateModelBoolField(
+                                                "send_dimensions",
+                                                e.target.checked,
+                                              )
+                                            }
+                                          />
+                                          <span>{t("Send dimensions")}</span>
+                                          <span
+                                            tabIndex={0}
+                                            className="group/info relative inline-flex cursor-help focus:outline-none"
+                                          >
+                                            <Info className="h-3 w-3 opacity-50 transition-opacity group-hover/info:opacity-100 group-focus/info:opacity-100" />
+                                            <span
+                                              role="tooltip"
+                                              className="pointer-events-none absolute top-full left-1/2 z-20 mt-1.5 w-64 -translate-x-1/2 rounded-lg border border-[var(--border)] bg-[var(--card)] p-2.5 text-[11px] leading-relaxed text-[var(--foreground)] opacity-0 shadow-lg transition-opacity duration-75 group-hover/info:opacity-100 group-focus/info:opacity-100"
+                                            >
+                                              {t(
+                                                "Some embedding models (e.g. Qwen text-embedding-v4) reject the `dimensions` request param. Turn this off if your provider returns HTTP 400.",
+                                              )}
+                                            </span>
+                                          </span>
+                                        </label>
+                                      </div>
+                                      <DimensionField
+                                        activeModel={model}
+                                        activeBinding={activeProfile?.binding}
+                                        capabilities={embeddingCapabilities}
+                                        embeddingDefaultDim={embeddingDefaultDim}
+                                        inputClass={inputClass}
+                                        onChangeDimension={(value) =>
+                                          updateModelField("dimension", value)
+                                        }
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    )}
+                        );
+                      })}
+                      <button
+                        type="button"
+                        onClick={addModel}
+                        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-[var(--border)] px-3 py-2 text-[12px] text-[var(--muted-foreground)] transition-colors hover:border-[var(--foreground)]/40 hover:bg-[var(--muted)]/40 hover:text-[var(--foreground)]"
+                      >
+                        <Plus className="h-3 w-3" />
+                        {t("Add model")}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
