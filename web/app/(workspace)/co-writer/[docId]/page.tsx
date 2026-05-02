@@ -52,6 +52,30 @@ import SaveToNotebookModal, {
   type NotebookSavePayload,
 } from "@/components/notebook/SaveToNotebookModal";
 import { CO_WRITER_SAMPLE_TEMPLATE } from "../sampleTemplate";
+import {
+  ACTION_LABELS,
+  AUTOSAVE_DEBOUNCE_MS,
+  LOCAL_DRAFT_PREFIX,
+  MAX_PANEL_RATIO,
+  MIN_PANEL_RATIO,
+  MODE_OPTIONS,
+  SPLIT_RATIO_KEY,
+  SYNC_SCROLL_KEY,
+  TOOL_OPTIONS,
+  type EditAction,
+  type KnowledgeBase,
+  type SelectedRange,
+  type SelectionMode,
+  type SelectionPopoverState,
+  type SelectionToolTrace,
+  type SelectionTraceData,
+  type SourceOption,
+  type StreamEditResult,
+  type StreamTraceEvent,
+  type ToolName,
+  type ToolbarItem,
+} from "@/lib/co-writer-helpers";
+import { ToolbarIconBtn } from "@/components/co-writer/ToolbarIconBtn";
 
 const MarkdownRenderer = dynamic(
   () => import("@/components/common/MarkdownRenderer"),
@@ -59,100 +83,6 @@ const MarkdownRenderer = dynamic(
     ssr: false,
   },
 );
-
-type EditAction = "rewrite" | "shorten" | "expand";
-type SelectionMode = EditAction | "none";
-type SourceOption = "none" | "rag" | "web";
-type ToolName =
-  | "brainstorm"
-  | "rag"
-  | "web_search"
-  | "code_execution"
-  | "reason"
-  | "paper_search";
-
-interface KnowledgeBase {
-  name: string;
-  is_default?: boolean;
-}
-
-const SPLIT_RATIO_KEY = "deeptutor.co_writer.split_ratio";
-const SYNC_SCROLL_KEY = "deeptutor.co_writer.sync_scroll";
-const LOCAL_DRAFT_PREFIX = "deeptutor.co_writer.draft.";
-const AUTOSAVE_DEBOUNCE_MS = 1500;
-const MIN_PANEL_RATIO = 0.18;
-const MAX_PANEL_RATIO = 0.82;
-
-const ACTION_LABELS: Record<EditAction, string> = {
-  rewrite: "Rewrite",
-  shorten: "Shorten",
-  expand: "Expand",
-};
-
-const TOOL_OPTIONS: Array<{ name: ToolName; label: string }> = [
-  { name: "brainstorm", label: "Brainstorm" },
-  { name: "rag", label: "RAG" },
-  { name: "web_search", label: "Web Search" },
-  { name: "code_execution", label: "Code" },
-  { name: "reason", label: "Reason" },
-  { name: "paper_search", label: "Arxiv Search" },
-];
-
-const MODE_OPTIONS: Array<{ value: SelectionMode; label: string }> = [
-  { value: "none", label: "None" },
-  { value: "shorten", label: "Shorten" },
-  { value: "expand", label: "Expand" },
-  { value: "rewrite", label: "Rewrite" },
-];
-
-interface ToolbarItem {
-  id: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  title: string;
-  snippet?: string;
-  type?: "separator";
-  action?: () => void;
-}
-
-interface SelectedRange {
-  start: number;
-  end: number;
-  text: string;
-  snapshot: string;
-}
-
-interface SelectionPopoverState {
-  visible: boolean;
-  top: number;
-  left: number;
-}
-
-interface SelectionToolTrace {
-  kind?: "tool_call" | "tool_result";
-  name: string;
-  arguments: Record<string, unknown>;
-  result: string;
-  success: boolean;
-  sources: Array<Record<string, unknown>>;
-  metadata: Record<string, unknown>;
-}
-
-interface SelectionTraceData {
-  thinking: string;
-  toolTraces: SelectionToolTrace[];
-  response: string;
-}
-
-interface StreamTraceEvent {
-  type: string;
-  stage?: string;
-  content?: string;
-  metadata?: Record<string, unknown>;
-}
-
-interface StreamEditResult {
-  edited_text?: string;
-}
 
 export default function CoWriterPage() {
   const { t } = useTranslation();
@@ -2231,22 +2161,3 @@ export default function CoWriterPage() {
   );
 }
 
-function ToolbarIconBtn({
-  title,
-  onClick,
-  children,
-}: {
-  title: string;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      title={title}
-      onClick={onClick}
-      className="inline-flex h-8 w-8 items-center justify-center rounded-md text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)] hover:text-[var(--foreground)]"
-    >
-      {children}
-    </button>
-  );
-}
