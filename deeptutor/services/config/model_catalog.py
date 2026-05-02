@@ -195,25 +195,52 @@ class ModelCatalogService:
             changed = True
 
         search_service = services.setdefault("search", _search_shell())
-        if not search_service.get("profiles") and (
-            summary.search["provider"] or summary.search["base_url"] or summary.search["api_key"]
-        ):
+        if not search_service.get("profiles"):
+            has_env_config = bool(
+                summary.search["provider"]
+                or summary.search["base_url"]
+                or summary.search["api_key"]
+            )
             profile_id = "search-profile-default"
-            services["search"] = {
-                "active_profile_id": profile_id,
-                "profiles": [
-                    {
-                        "id": profile_id,
-                        "name": "Default Search Provider",
-                        "provider": summary.search["provider"] or "brave",
-                        "base_url": summary.search["base_url"],
-                        "api_key": summary.search["api_key"],
-                        "api_version": "",
-                        "proxy": "",
-                        "models": [],
-                    }
-                ],
-            }
+            if has_env_config:
+                # User had configured search via env — seed a profile from
+                # those values so the UI surfaces what's actually in .env.
+                services["search"] = {
+                    "active_profile_id": profile_id,
+                    "profiles": [
+                        {
+                            "id": profile_id,
+                            "name": "Default Search Provider",
+                            "provider": summary.search["provider"] or "brave",
+                            "base_url": summary.search["base_url"],
+                            "api_key": summary.search["api_key"],
+                            "api_version": "",
+                            "proxy": "",
+                            "models": [],
+                        }
+                    ],
+                }
+            else:
+                # First-run / no env config — seed DuckDuckGo so chat can
+                # use web_search out of the box without the user having
+                # to register a Brave/Tavily key first. Quality is lower
+                # than Brave/Tavily and rate-limited, but it works
+                # zero-config and tends to be reachable in mainland CN.
+                services["search"] = {
+                    "active_profile_id": profile_id,
+                    "profiles": [
+                        {
+                            "id": profile_id,
+                            "name": "DuckDuckGo (zero-config)",
+                            "provider": "duckduckgo",
+                            "base_url": "",
+                            "api_key": "",
+                            "api_version": "",
+                            "proxy": "",
+                            "models": [],
+                        }
+                    ],
+                }
             changed = True
 
         return changed

@@ -65,10 +65,21 @@ export function SearchProviderHelp() {
     <ProviderHelpSheet
       triggerTitle={t("How to configure search providers")}
       sheetTitle="配置 Search Provider"
-      sheetIntro="选一个 provider、申请 API key、填好字段即可。Brave 是最简单的起步选项。"
+      sheetIntro="DuckDuckGo 已默认开箱可用,无需配置。想要更高质量的搜索结果再选 Brave / Tavily / Jina 等。"
       providers={PROVIDERS}
       body={
         <>
+          <section className="mb-6 rounded-lg border border-emerald-200/60 bg-emerald-50/40 p-3 dark:border-emerald-900/40 dark:bg-emerald-950/15">
+            <div className="mb-1 text-[13px] font-medium text-emerald-800 dark:text-emerald-300">
+              开箱即用:DuckDuckGo 零配置已启用
+            </div>
+            <p className="text-[12px] leading-relaxed text-emerald-800/80 dark:text-emerald-200/80">
+              新装 deeptutor 默认就预置了一个 DuckDuckGo profile,chat 里启用 web_search 工具立刻能用,完全不需要先来 Settings 配置。
+              DuckDuckGo 国内大部分时段可直连、零费用,代价是质量比 Brave / Tavily 差一截、速率受限。
+              满足不了再来配 Brave / Tavily — 注册个 key 替换 active profile,Apply 就升级了。
+            </p>
+          </section>
+
           <section className="mb-6 rounded-lg border border-amber-200/60 bg-amber-50/40 p-3 dark:border-amber-900/40 dark:bg-amber-950/15">
             <div className="mb-1 text-[13px] font-medium text-amber-800 dark:text-amber-300">
               国内用户:Proxy 大概率必填

@@ -121,6 +121,10 @@ export function statusDotClass(
 }
 
 export function defaultCatalog(): Catalog {
+  // SSR placeholder. Backend bootstrap (model_catalog._hydrate_missing_services_from_env)
+  // returns the same DuckDuckGo seed when the catalog is fresh — keeping the
+  // SSR shape identical avoids a one-frame "no profile / has profile" flicker
+  // when the client hydrates with the real /api/v1/settings response.
   return {
     version: 1,
     services: {
@@ -130,7 +134,21 @@ export function defaultCatalog(): Catalog {
         active_model_id: null,
         profiles: [],
       },
-      search: { active_profile_id: null, profiles: [] },
+      search: {
+        active_profile_id: "search-profile-default",
+        profiles: [
+          {
+            id: "search-profile-default",
+            name: "DuckDuckGo (zero-config)",
+            provider: "duckduckgo",
+            base_url: "",
+            api_key: "",
+            api_version: "",
+            proxy: "",
+            models: [],
+          },
+        ],
+      },
     },
   };
 }
