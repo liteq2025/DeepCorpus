@@ -26,7 +26,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-import { ListPane, RouteFrame } from "@/components/layout";
+import { ListPane, RouteFrame, useConfirm } from "@/components/layout";
 import { writeStoredLanguage } from "@/context/app-shell-storage";
 import { apiUrl } from "@/lib/api";
 import { setTheme as applyThemePreference } from "@/lib/theme";
@@ -151,12 +151,30 @@ interface SectionEntry {
   icon: LucideIcon;
 }
 
-const SECTIONS: SectionEntry[] = [
-  { id: "preferences", label: "Preferences", icon: SlidersHorizontal },
-  { id: "llm", label: "LLM", icon: Brain },
-  { id: "embedding", label: "Embedding", icon: Database },
-  { id: "search", label: "Search", icon: Search },
+interface SectionGroup {
+  /** When set, renders a small uppercase divider above the items. */
+  label: string | null;
+  items: SectionEntry[];
+}
+
+const SECTION_GROUPS: SectionGroup[] = [
+  {
+    label: null,
+    items: [
+      { id: "preferences", label: "Preferences", icon: SlidersHorizontal },
+    ],
+  },
+  {
+    label: "Models",
+    items: [
+      { id: "llm", label: "LLM", icon: Brain },
+      { id: "embedding", label: "Embedding", icon: Database },
+      { id: "search", label: "Search", icon: Search },
+    ],
+  },
 ];
+
+const ALL_SECTIONS: SectionEntry[] = SECTION_GROUPS.flatMap((g) => g.items);
 
 const SERVICE_SECTIONS = new Set<Section>(["llm", "embedding", "search"]);
 
@@ -171,46 +189,60 @@ function SectionsNav({
 }) {
   const { t } = useTranslation();
   return (
-    <nav aria-label={t("Settings sections")} className="space-y-0.5 px-1 pt-1">
-      {SECTIONS.map(({ id, label, icon: Icon }) => {
-        const active = activeSection === id;
-        const isService =
-          id === "llm" || id === "embedding" || id === "search";
-        return (
-          <button
-            key={id}
-            type="button"
-            onClick={() => onSelect(id)}
-            aria-current={active ? "page" : undefined}
-            className={`group flex w-full items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors ${
-              active
-                ? "border-[var(--primary)]/40 bg-[var(--primary)]/8"
-                : "border-transparent hover:border-[var(--border)] hover:bg-[var(--muted)]/40"
-            }`}
-          >
-            <Icon
-              size={14}
-              strokeWidth={active ? 2 : 1.6}
-              className={`shrink-0 ${
-                active
-                  ? "text-[var(--foreground)]"
-                  : "text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]"
-              }`}
-              aria-hidden
-            />
-            <span className="flex-1 truncate text-[13px] font-medium leading-tight text-[var(--foreground)]">
-              {t(label)}
-            </span>
-            {isService && (
-              <span
-                className={`ml-auto inline-block h-1.5 w-1.5 shrink-0 rounded-full ${serviceHealthDot(id as ServiceName, status)}`}
-                title={serviceHealthLabel(id as ServiceName, status, t)}
-                aria-label={serviceHealthLabel(id as ServiceName, status, t)}
-              />
-            )}
-          </button>
-        );
-      })}
+    <nav aria-label={t("Settings sections")} className="px-1 pt-1">
+      {SECTION_GROUPS.map((group, groupIndex) => (
+        <div
+          key={group.label ?? `group-${groupIndex}`}
+          className={groupIndex > 0 ? "mt-3" : undefined}
+        >
+          {group.label && (
+            <div className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-[var(--muted-foreground)]/70">
+              {t(group.label)}
+            </div>
+          )}
+          <div className="space-y-0.5">
+            {group.items.map(({ id, label, icon: Icon }) => {
+              const active = activeSection === id;
+              const isService =
+                id === "llm" || id === "embedding" || id === "search";
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => onSelect(id)}
+                  aria-current={active ? "page" : undefined}
+                  className={`group flex w-full items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors ${
+                    active
+                      ? "border-[var(--primary)]/40 bg-[var(--primary)]/8"
+                      : "border-transparent hover:border-[var(--border)] hover:bg-[var(--muted)]/40"
+                  }`}
+                >
+                  <Icon
+                    size={14}
+                    strokeWidth={active ? 2 : 1.6}
+                    className={`shrink-0 ${
+                      active
+                        ? "text-[var(--foreground)]"
+                        : "text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]"
+                    }`}
+                    aria-hidden
+                  />
+                  <span className="flex-1 truncate text-[13px] font-medium leading-tight text-[var(--foreground)]">
+                    {t(label)}
+                  </span>
+                  {isService && (
+                    <span
+                      className={`ml-auto inline-block h-1.5 w-1.5 shrink-0 rounded-full ${serviceHealthDot(id as ServiceName, status)}`}
+                      title={serviceHealthLabel(id as ServiceName, status, t)}
+                      aria-label={serviceHealthLabel(id as ServiceName, status, t)}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </nav>
   );
 }
@@ -230,7 +262,7 @@ function SectionsNavCollapsed({
       aria-label={t("Settings sections")}
       className="flex h-full flex-col items-center gap-1 py-2"
     >
-      {SECTIONS.map(({ id, label, icon: Icon }) => {
+      {ALL_SECTIONS.map(({ id, label, icon: Icon }) => {
         const active = activeSection === id;
         const isService =
           id === "llm" || id === "embedding" || id === "search";
@@ -270,6 +302,7 @@ function SectionsNavCollapsed({
 
 function SettingsPageContent() {
   const { t } = useTranslation();
+  const confirm = useConfirm();
 
   const [status, setStatus] = useState<SystemStatus | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -517,6 +550,37 @@ function SettingsPageContent() {
       );
       service.active_model_id = profile.models[0]?.id ?? null;
     });
+  };
+
+  const confirmDeleteProfile = async () => {
+    if (!activeProfile) return;
+    const modelCount = activeProfile.models?.length ?? 0;
+    const ok = await confirm({
+      title: t('Delete profile "{{name}}"?', { name: activeProfile.name }),
+      description:
+        activeService !== "search" && modelCount > 0
+          ? t(
+              "All {{count}} model(s) configured under this profile will be removed too. This cannot be undone.",
+              { count: modelCount },
+            )
+          : t("This cannot be undone."),
+      confirmLabel: t("Delete"),
+      destructive: true,
+    });
+    if (!ok) return;
+    removeActiveProfile();
+  };
+
+  const confirmDeleteModel = async () => {
+    if (!activeModel) return;
+    const ok = await confirm({
+      title: t('Delete model "{{name}}"?', { name: activeModel.name }),
+      description: t("This cannot be undone."),
+      confirmLabel: t("Delete"),
+      destructive: true,
+    });
+    if (!ok) return;
+    removeActiveModel();
   };
 
   const updateProfileField = (field: keyof CatalogProfile, value: string) => {
@@ -948,21 +1012,33 @@ function SettingsPageContent() {
                     </div>
                   </button>
                 ))}
-                <button
-                  onClick={removeActiveProfile}
-                  disabled={!activeProfile}
-                  className="flex w-full items-center gap-1.5 rounded-lg px-3 py-2 text-[11px] text-[var(--muted-foreground)]/40 transition-colors hover:text-red-500 disabled:opacity-30"
-                >
-                  <Trash2 className="h-3 w-3" />
-                  {t("Delete profile")}
-                </button>
               </div>
 
               {/* ── Editor ── */}
               <div className="space-y-5">
                 <div className="rounded-xl border border-[var(--border)] p-5">
-                  <div className="mb-4 text-[13px] font-medium text-[var(--foreground)]">
-                    {t("Profile")}
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <span className="text-[13px] font-medium text-[var(--foreground)]">
+                      {t("Profile")}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void confirmDeleteProfile()}
+                      disabled={!activeProfile}
+                      className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-[var(--muted-foreground)] transition-colors hover:bg-red-500/10 hover:text-red-500 disabled:opacity-30"
+                      title={
+                        activeProfile
+                          ? t('Delete profile "{{name}}"', {
+                              name: activeProfile.name,
+                            })
+                          : t("Delete profile")
+                      }
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      {activeProfile
+                        ? t('Delete "{{name}}"', { name: activeProfile.name })
+                        : t("Delete profile")}
+                    </button>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
@@ -1155,17 +1231,27 @@ function SettingsPageContent() {
 
                 {activeService !== "search" && (
                   <div className="rounded-xl border border-[var(--border)] p-5">
-                    <div className="mb-4 flex items-center justify-between">
-                      <div className="text-[13px] font-medium text-[var(--foreground)]">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                      <span className="text-[13px] font-medium text-[var(--foreground)]">
                         {t("Models")}
-                      </div>
+                      </span>
                       <button
-                        onClick={removeActiveModel}
+                        type="button"
+                        onClick={() => void confirmDeleteModel()}
                         disabled={!activeModel}
-                        className="inline-flex items-center gap-1 text-[11px] text-[var(--muted-foreground)]/40 transition-colors hover:text-red-500 disabled:opacity-30"
+                        className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] text-[var(--muted-foreground)] transition-colors hover:bg-red-500/10 hover:text-red-500 disabled:opacity-30"
+                        title={
+                          activeModel
+                            ? t('Delete model "{{name}}"', {
+                                name: activeModel.name,
+                              })
+                            : t("Delete model")
+                        }
                       >
                         <Trash2 className="h-3 w-3" />
-                        {t("Delete")}
+                        {activeModel
+                          ? t('Delete "{{name}}"', { name: activeModel.name })
+                          : t("Delete model")}
                       </button>
                     </div>
                     {activeProfile.models.length > 0 && (
