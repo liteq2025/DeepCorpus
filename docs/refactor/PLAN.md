@@ -20,7 +20,7 @@
 | **0** | shadcn 接入 + token 对齐 + 去 glass/snow | ✅ completed | 1 天 | shadcn b37bl1flo 落地，11 个原语就位（button/input/textarea/label/dialog/alert-dialog/sheet/popover/dropdown-menu/tooltip/sonner），glass + snow 主题清掉，`npm run check:e2e` 97 项绿 | [phase-0-shadcn.md](./phase-0-shadcn.md) |
 | **0.5** | Layout 标准化（9 层栈 + sheet-first） | ✅ completed | 6 天 | 所有 routes 用 layout 原语组合（5 routes via PageBody/PageHeader/RouteFrame，/chat 走 layout 修复）、7 个 Modal → Sheet，15 个 `window.confirm()` → AlertDialog，sidebar 共享 hook，mobile smoke project + breakpoints 文档落地 | [phase-0.5-layout.md](./phase-0.5-layout.md) |
 | **1** | FE↔BE WS 契约 codegen | ✅ completed | 1 天 | `make types` 跑通；CI 检测漂移 | [phase-1-ws-contract.md](./phase-1-ws-contract.md) |
-| **2** | 拆 5 个 mega-page | 🟡 next up | 2 周 | 8,759 行 → ≤ 4,000 行，单文件 ≤ 600 行 | （即将开写） |
+| **2** | 拆 5 个 mega-page | 🟡 in-progress | 2 周 | 9,388 行（实测）→ ≤ 4,000 行，单文件 ≤ 600 行 | [phase-2-megapages.md](./phase-2-megapages.md) |
 | **3** | 命名 / 边界文档收尾 | ⏳ pending | 2 天 | `KnowledgePage` 物理位置归位；STYLE.md 落地 | （2 完成后再写） |
 
 **状态图例**：⏳ pending · 🟡 in-progress · ✅ completed · ❌ blocked
