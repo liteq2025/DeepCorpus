@@ -1265,6 +1265,9 @@ function makeStreamEvent(
     stage: "demo",
     content: "",
     metadata: {},
+    session_id: "",
+    turn_id: "",
+    seq: 0,
     timestamp: Date.now(),
     ...fields,
   };

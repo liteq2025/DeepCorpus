@@ -6,11 +6,19 @@ on:
     paths:
       - "web/**"
       - ".github/workflows/web-tests.yml"
+      # Phase 1 codegen — drift between BE WS protocol and FE types must
+      # break this workflow even when web/ is untouched.
+      - "deeptutor/core/stream.py"
+      - "scripts/gen_ws_types.py"
+      - "Makefile"
   pull_request:
     branches: [custom/dev]
     paths:
       - "web/**"
       - ".github/workflows/web-tests.yml"
+      - "deeptutor/core/stream.py"
+      - "scripts/gen_ws_types.py"
+      - "Makefile"
 
 # Cancel in-progress runs of the same ref so a fresh push superseded by a
 # faster one doesn't burn CI minutes.
@@ -37,8 +45,20 @@ jobs:
           cache: "npm"
           cache-dependency-path: web/package-lock.json
 
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
       - name: Install dependencies
         run: npm ci
+
+      # Phase 1 — drift gate. Regenerates web/lib/ws-events.gen.ts from
+      # deeptutor/core/stream.py and fails if the committed file is stale.
+      # Stdlib-only; no `pip install` needed.
+      - name: Verify FE↔BE WS types are in sync
+        working-directory: ${{ github.workspace }}
+        run: make types-check
 
       - name: Lint
         run: npm run lint

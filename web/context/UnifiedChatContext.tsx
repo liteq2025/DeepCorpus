@@ -801,6 +801,9 @@ export function UnifiedChatProvider({
             content:
               "Connection timed out — no response received for 60 seconds.",
             metadata: { turn_terminal: true, status: "failed" },
+            session_id: "",
+            turn_id: "",
+            seq: 0,
             timestamp: Date.now() / 1000,
           },
         });

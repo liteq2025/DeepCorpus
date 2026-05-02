@@ -11,37 +11,22 @@
  */
 
 import { wsUrl } from "./api";
+import type { StreamEvent } from "./ws-events.gen";
 
-// ---- StreamEvent types (mirror Python StreamEventType) ----
+// ---- StreamEvent types (server → client) ----
+//
+// Phase 1 (FE↔BE WS contract codegen) — these are now generated from the
+// BE source of truth (deeptutor/core/stream.py). Regenerate via
+// `make types`. Editing them here would drift from the BE.
 
-export type StreamEventType =
-  | "stage_start"
-  | "stage_end"
-  | "thinking"
-  | "observation"
-  | "content"
-  | "tool_call"
-  | "tool_result"
-  | "progress"
-  | "sources"
-  | "result"
-  | "error"
-  | "session"
-  | "done";
+export type { StreamEvent, StreamEventType } from "./ws-events.gen";
 
-export interface StreamEvent {
-  type: StreamEventType;
-  source: string;
-  stage: string;
-  content: string;
-  metadata: Record<string, unknown>;
-  session_id?: string;
-  turn_id?: string;
-  seq?: number;
-  timestamp: number;
-}
-
-// ---- Client message ----
+// ---- Client message (client → server) ----
+//
+// Manually mirrored on both sides because the BE parses raw dicts in
+// deeptutor/api/routers/unified_ws.py — there's no Python type to
+// codegen from. If the BE adds a new client→server message type, update
+// it here AND in the BE handler. See docs/refactor/phase-1-ws-contract.md.
 
 export interface StartTurnMessage {
   type: "message" | "start_turn";
