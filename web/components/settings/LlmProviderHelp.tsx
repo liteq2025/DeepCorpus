@@ -20,7 +20,7 @@ const PROVIDERS: ProviderEntry[] = [
   {
     name: "Anthropic Claude",
     keyRequired: "required",
-    registerUrl: "https://console.anthropic.com/settings/keys",
+    registerUrl: "https://platform.claude.com/settings/keys",
     pricing: "按 token 计费,Haiku 起",
     notes:
       "通过 OpenAI-compatible 接口调用,需要 Provider 选 anthropic 并填 Base URL https://api.anthropic.com/v1 或走第三方代理网关。Key 形如 sk-ant-…。",
