@@ -322,13 +322,12 @@ const COMPONENT_TREE = `web/                                              整个
 │   │   ├── VersionBadge.tsx                      底部版本徽章
 │   │   └── WorkspaceSidebar.tsx                  ⭐ workspace 路由组左栏
 │   │
-│   ├── space/                                    6 files
+│   ├── space/                                    5 files
 │   │   ├── MemorySection.tsx                     记忆段
 │   │   ├── NotebooksSection.tsx                  笔记本段
 │   │   ├── QuestionBankSection.tsx               题库段
 │   │   ├── SkillsSection.tsx                     Skills 段
-│   │   ├── SpaceMiniNav.tsx                      Space 子导航
-│   │   └── SpaceSectionHeader.tsx                段头（icon + 标题 + meta）
+│   │   └── SpaceMiniNav.tsx                      Space 子导航（包 ListPane）
 │   │
 │   ├── ui/                                       1 file ⚠ 设计系统薄弱
 │   │   └── Button.tsx                            4 variant × 3 size

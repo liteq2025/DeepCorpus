@@ -18,9 +18,8 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
-import SpaceSectionHeader from "@/components/space/SpaceSectionHeader";
 import { Badge } from "@/components/ui/badge";
-import { useConfirm } from "@/components/layout";
+import { PageHeader, useConfirm } from "@/components/layout";
 import {
   createNotebook,
   deleteNotebook,
@@ -226,7 +225,7 @@ export default function NotebooksSection() {
 
   return (
     <div className="space-y-6">
-      <SpaceSectionHeader
+      <PageHeader
         icon={NotebookPen}
         title={t("Notebooks")}
         description={t(

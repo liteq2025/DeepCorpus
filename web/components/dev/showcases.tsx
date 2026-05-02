@@ -191,7 +191,7 @@ import SessionList from "@/components/SessionList";
 import type { SessionSummary } from "@/lib/session-api";
 
 import SpaceMiniNav from "@/components/space/SpaceMiniNav";
-import SpaceSectionHeader from "@/components/space/SpaceSectionHeader";
+import { PageHeader } from "@/components/layout";
 import { VersionBadge } from "@/components/sidebar/VersionBadge";
 
 import BookProgressTimeline from "@/app/(workspace)/book/components/BookProgressTimeline";
@@ -2036,13 +2036,13 @@ function SpaceMiniNavPreview() {
   return <SpaceMiniNav />;
 }
 
-function SpaceSectionHeaderPreview() {
+function PageHeaderPreview() {
   return (
-    <SpaceSectionHeader
+    <PageHeader
       icon={Sparkles}
       title="技能库"
-      description="用 Markdown 自定义 bot 行为"
-      meta={<span className="text-[11px] text-[var(--muted-foreground)]">12 项</span>}
+      description="用 Markdown 自定义 bot 行为，指导 chat 回复方式"
+      meta={<Badge variant="outline">12 项</Badge>}
     />
   );
 }
@@ -3043,13 +3043,14 @@ export const SHOWCASES: Showcase[] = [
     Preview: SpaceMiniNavPreview,
   },
   {
-    id: "space-section-header",
-    category: "工作区",
-    categoryCode: "space/",
-    name: "段头",
-    code: "SpaceSectionHeader",
-    description: "图标 + 标题 + 描述 + meta，构成各 Space 段落的页头。",
-    Preview: SpaceSectionHeaderPreview,
+    id: "ui-page-header",
+    category: "UI 原语",
+    categoryCode: "layout/",
+    name: "页面头部",
+    code: "PageHeader",
+    description:
+      "icon + 标题 + 描述 + meta + actions。canonical h1（text-2xl / font-semibold）。replaces the legacy SpaceSectionHeader.",
+    Preview: PageHeaderPreview,
   },
 
   // ---------- Sidebar ----------

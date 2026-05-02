@@ -14,9 +14,8 @@ import {
 import { useTranslation } from "react-i18next";
 import { useAppShell } from "@/context/AppShellContext";
 import { apiUrl } from "@/lib/api";
-import SpaceSectionHeader from "@/components/space/SpaceSectionHeader";
 import { Badge } from "@/components/ui/badge";
-import { useConfirm } from "@/components/layout";
+import { PageHeader, useConfirm } from "@/components/layout";
 
 const MarkdownRenderer = dynamic(
   () => import("@/components/common/MarkdownRenderer"),
@@ -212,7 +211,7 @@ export default function MemorySection() {
 
   return (
     <div className="space-y-6">
-      <SpaceSectionHeader
+      <PageHeader
         icon={Brain}
         title={t("Memory")}
         description={t(
@@ -227,7 +226,7 @@ export default function MemorySection() {
             </Badge>
           )
         }
-        action={
+        actions={
           <div className="flex items-center gap-2">
             <button
               onClick={saveMemory}

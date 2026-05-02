@@ -14,9 +14,8 @@ import {
   Wand2,
   X,
 } from "lucide-react";
-import SpaceSectionHeader from "@/components/space/SpaceSectionHeader";
 import { Badge } from "@/components/ui/badge";
-import { useConfirm } from "@/components/layout";
+import { PageHeader, useConfirm } from "@/components/layout";
 import {
   createSkill,
   createSkillTag,
@@ -322,7 +321,7 @@ export default function SkillsSection() {
 
   return (
     <div className="space-y-6">
-      <SpaceSectionHeader
+      <PageHeader
         icon={Wand2}
         title={t("Skills")}
         description={t(
@@ -333,7 +332,7 @@ export default function SkillsSection() {
             {skills.length} {t("skills.count.suffix")}
           </Badge>
         }
-        action={
+        actions={
           <button
             onClick={openCreate}
             className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--foreground)] px-3.5 py-1.5 text-[12.5px] font-medium text-[var(--background)] shadow-sm transition-opacity hover:opacity-90"

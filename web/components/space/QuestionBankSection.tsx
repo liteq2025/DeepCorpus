@@ -18,9 +18,8 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import SpaceSectionHeader from "@/components/space/SpaceSectionHeader";
 import { Badge } from "@/components/ui/badge";
-import { useConfirm } from "@/components/layout";
+import { PageHeader, useConfirm } from "@/components/layout";
 import {
   createCategory,
   deleteCategory,
@@ -193,7 +192,7 @@ export default function QuestionBankSection() {
 
   return (
     <div className="space-y-0">
-      <SpaceSectionHeader
+      <PageHeader
         icon={ClipboardList}
         title={t("Question Bank")}
         description={t(
