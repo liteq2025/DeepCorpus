@@ -44,8 +44,8 @@ export function ListPane({
   children,
   collapsedContent,
   defaultCollapsed = false,
-  width = 280,
-  collapsedWidth = 56,
+  width = 240,
+  collapsedWidth = 48,
   headerActions,
   className = "",
 }: ListPaneProps) {

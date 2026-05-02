@@ -90,7 +90,7 @@ export function SidebarShell({
   /* ---- Collapsed state ---- */
   if (collapsed) {
     return (
-      <aside className="group/sb relative flex h-screen w-[60px] shrink-0 flex-col items-center bg-[var(--secondary)] py-3 transition-all duration-200">
+      <aside className="group/sb relative flex h-screen w-[56px] shrink-0 flex-col items-center bg-[var(--secondary)] py-3 transition-all duration-200">
         {/* Header: logo + collapse toggle (toggle replaces logo on hover) */}
         <div className="relative mb-2 flex h-9 w-9 items-center justify-center">
           <Link
@@ -196,7 +196,7 @@ export function SidebarShell({
 
   /* ---- Expanded state ---- */
   return (
-    <aside className="flex w-[220px] h-screen shrink-0 flex-col bg-[var(--secondary)] transition-all duration-200">
+    <aside className="flex w-[260px] h-screen shrink-0 flex-col bg-[var(--secondary)] transition-all duration-200">
       {/* Header: logo + collapse toggle */}
       <div className="flex h-14 items-center justify-between px-4">
         <Link href="/" className="group flex items-center gap-2">

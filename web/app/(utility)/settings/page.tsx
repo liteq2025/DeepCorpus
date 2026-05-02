@@ -10,6 +10,9 @@ import {
   useState,
 } from "react";
 import {
+  Bell,
+  BookOpen,
+  BookText,
   Brain,
   CheckCircle2,
   ChevronDown,
@@ -19,12 +22,16 @@ import {
   Eye,
   EyeOff,
   Info,
+  Keyboard,
   Loader2,
+  MessageSquare,
   Moon,
+  NotebookPen,
   Plus,
   Rocket,
   Search,
   SlidersHorizontal,
+  Sparkles,
   Sun,
   Terminal,
   Trash2,
@@ -37,6 +44,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 import {
+  EmptyState,
   ListPane,
   Onboarding,
   RouteFrame,
@@ -194,7 +202,20 @@ function serviceHealthLabel(
     : t("Not configured");
 }
 
-type Section = "preferences" | "llm" | "embedding" | "search";
+type Section =
+  | "preferences"
+  | "notifications"
+  | "llm"
+  | "embedding"
+  | "search"
+  | "chat-defaults"
+  | "knowledge-defaults"
+  | "reading"
+  | "notebook-prefs"
+  | "memory-prefs"
+  | "skills-prefs"
+  | "shortcuts"
+  | "about";
 
 interface SectionEntry {
   id: Section;
@@ -213,6 +234,7 @@ const SECTION_GROUPS: SectionGroup[] = [
     label: null,
     items: [
       { id: "preferences", label: "Preferences", icon: SlidersHorizontal },
+      { id: "notifications", label: "Notifications", icon: Bell },
     ],
   },
   {
@@ -223,11 +245,42 @@ const SECTION_GROUPS: SectionGroup[] = [
       { id: "search", label: "Search", icon: Search },
     ],
   },
+  {
+    label: "Defaults",
+    items: [
+      { id: "chat-defaults", label: "Chat", icon: MessageSquare },
+      { id: "knowledge-defaults", label: "Knowledge", icon: BookOpen },
+      { id: "reading", label: "Reading", icon: BookText },
+    ],
+  },
+  {
+    label: "Workspace",
+    items: [
+      { id: "notebook-prefs", label: "Notebook", icon: NotebookPen },
+      { id: "memory-prefs", label: "Memory", icon: Sparkles },
+      { id: "skills-prefs", label: "Skills", icon: Wand2 },
+    ],
+  },
+  {
+    label: "Advanced",
+    items: [
+      { id: "shortcuts", label: "Shortcuts", icon: Keyboard },
+      { id: "about", label: "About", icon: Info },
+    ],
+  },
 ];
 
 const ALL_SECTIONS: SectionEntry[] = SECTION_GROUPS.flatMap((g) => g.items);
 
 const SERVICE_SECTIONS = new Set<Section>(["llm", "embedding", "search"]);
+
+/** Sections that have a real UI today; others render a Coming-soon placeholder. */
+const IMPLEMENTED_SECTIONS = new Set<Section>([
+  "preferences",
+  "llm",
+  "embedding",
+  "search",
+]);
 
 type LanguageCode = "en" | "zh";
 
@@ -241,6 +294,28 @@ const LANGUAGES: LanguageOption[] = [
   { value: "en", label: "English" },
   { value: "zh", label: "中文" },
 ];
+
+function PlaceholderSection({
+  section,
+  entry,
+}: {
+  section: Section;
+  entry: SectionEntry;
+}) {
+  const { t } = useTranslation();
+  return (
+    <EmptyState
+      icon={entry.icon}
+      title={t(entry.label)}
+      description={t(`settings.placeholder.${section}`)}
+      action={
+        <span className="inline-flex items-center gap-1 rounded-full bg-[var(--muted)] px-2.5 py-1 text-[11px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]">
+          {t("Coming soon")}
+        </span>
+      }
+    />
+  );
+}
 
 function SectionsNav({
   activeSection,
@@ -295,13 +370,20 @@ function SectionsNav({
                   <span className="flex-1 truncate text-[13px] font-medium leading-tight text-[var(--foreground)]">
                     {t(label)}
                   </span>
-                  {isService && (
+                  {isService ? (
                     <span
                       className={`ml-auto inline-block h-1.5 w-1.5 shrink-0 rounded-full ${serviceHealthDot(id as ServiceName, status)}`}
                       title={serviceHealthLabel(id as ServiceName, status, t)}
                       aria-label={serviceHealthLabel(id as ServiceName, status, t)}
                     />
-                  )}
+                  ) : !IMPLEMENTED_SECTIONS.has(id) ? (
+                    <span
+                      className="ml-auto rounded-full bg-[var(--muted)]/70 px-1.5 py-px text-[9px] font-medium uppercase tracking-wider text-[var(--muted-foreground)]/80"
+                      title={t("Coming soon")}
+                    >
+                      {t("Soon")}
+                    </span>
+                  ) : null}
                 </button>
               );
             })}
@@ -331,9 +413,12 @@ function SectionsNavCollapsed({
         const active = activeSection === id;
         const isService =
           id === "llm" || id === "embedding" || id === "search";
+        const isWip = !IMPLEMENTED_SECTIONS.has(id);
         const tooltip = isService
           ? `${t(label)} · ${serviceHealthLabel(id as ServiceName, status, t)}`
-          : t(label);
+          : isWip
+            ? `${t(label)} · ${t("Coming soon")}`
+            : t(label);
         return (
           <button
             key={id}
@@ -345,7 +430,9 @@ function SectionsNavCollapsed({
             className={`relative flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${
               active
                 ? "border-[var(--primary)]/40 bg-[var(--primary)]/10 text-[var(--foreground)]"
-                : "border-transparent text-[var(--muted-foreground)] hover:bg-[var(--muted)]/50 hover:text-[var(--foreground)]"
+                : isWip
+                  ? "border-transparent text-[var(--muted-foreground)]/50 hover:bg-[var(--muted)]/50 hover:text-[var(--foreground)]"
+                  : "border-transparent text-[var(--muted-foreground)] hover:bg-[var(--muted)]/50 hover:text-[var(--foreground)]"
             }`}
           >
             <Icon size={14} strokeWidth={active ? 2 : 1.6} aria-hidden />
@@ -1056,6 +1143,16 @@ function SettingsPageContent() {
             </div>
           </div>
         </div>
+        )}
+
+        {!IMPLEMENTED_SECTIONS.has(activeSection) && (
+          <PlaceholderSection
+            section={activeSection}
+            entry={
+              ALL_SECTIONS.find((s) => s.id === activeSection) ??
+              ALL_SECTIONS[0]
+            }
+          />
         )}
 
         {SERVICE_SECTIONS.has(activeSection) && (
