@@ -34,7 +34,7 @@
 | **1** | `<AppSidebar>` | 全局持久导航 | 1 | 10 | 路由组 layout |
 | **2** | `<ListPane>` | 第二列（列表 / 章节 / 文件树） | 0-1 | 10 | 路由 layout 或 page |
 | **3** | `<main>` + `<PageBody>` | 主工作区 | 1 | 10 | page |
-| **4** | `<InspectorPanel>` | 右栏（属性 / 引用 / 工具） | 0-1 | 10 | page，可 collapse |
+| **4** | `<InspectorPanel>` | 右栏（属性 / 引用 / 工具） | 0-1 | 10 | page，可 collapse ⚠ 当前 0 消费者 — sunset 2026-Q3 见下 |
 | **5** | `<Sheet>` | 侧滑窗（**默认** overlay） | 1（最多嵌 2） | 40 | URL state 或 trigger |
 | **6** | `<Dialog>` / `<AlertDialog>` | 居中模态（仅破坏性确认 / 硬阻断） | 1 | 50 | trigger |
 | **7** | `<Popover>` / `<DropdownMenu>` | 锚定弹层 | n | 60 | trigger 局部 state |
@@ -352,3 +352,56 @@ final   1 commit  [FORK-MOD] docs: mark Phase 0.5 as completed
 ```
 
 总计 ~22 commits / 6 days。
+
+## 10. 0.5 关板后的 audit cleanup pack（2026-05-02）
+
+Phase 0.5 ✅ 后做的 audit 暴露 4 处 carry-over，逐项处理：
+
+| # | 项目 | 状态 | 落地 commit |
+|---|---|---|---|
+| 1 | `/chat` 视觉基线（sheet-first 改最重路由 0 pixel gating） | ✅ 已补 | `6e24e0a` |
+| 2 | `SpaceSectionHeader` `text-[19px]` 违反 canonical typography（4 sub-route 跟着违反）| ✅ 已迁 PageHeader | `a2e591d` |
+| 3 | `<InspectorPanel>` 0 消费者 | ⚠ 留观 → sunset 2026-Q3 | (本 commit) |
+| 4 | `PageHeader` 适用边界文档化 | ✅ 见 §11 | (本 commit) |
+
+### 10.1 InspectorPanel sunset 决策
+
+**事实**：Layer 4 原语 `<InspectorPanel>` 自 0.5.2 落地起 0 消费者。当初为 /chat citations panel 设计，但该 UI 最终走了 Sheet 路线。
+
+**决策**：保留代码 + JSDoc 状态注释（详见 `components/layout/InspectorPanel.tsx` STATUS 段）。
+
+**Sunset 触发**：2026-Q3 前如未出现真实 Layer 4 use case（候选：/book reading-companion notes pane，或 /chat 重新评估 citations Sheet→Panel），删除 `InspectorPanel.tsx` + `LayoutContext.tsx` 的 `inspectors` state slice + `RouteFrame` 引用，9 层栈降为 8 层。
+
+**为什么不立刻删**：保留可识别的「Layer 4 形状」可以让后续真实需求出现时直接用，而不是再设计一遍。代码 80 行 + 0 runtime 成本，留着不亏。
+
+## 11. PageHeader 适用边界
+
+PageHeader 是 Layer 3 主工作区的 canonical 头部，但**不是所有页面都该用**。
+
+**用 PageHeader 的场景**：
+- 页面有简单 title + 可选 description + 可选 meta + 可选 actions
+- 标题语义是「这个页面在做什么」
+- 例：`/playground`、所有 `/space/*` sub-route（0.5 cleanup pack 后）
+
+**不用 PageHeader、保留 inline header 的场景**：
+- 头部本身是工具栏（多按钮、状态切换、紧凑命令）—— 例：`/co-writer`（紧凑命令栏 + border-b 分割）
+- 头部有页面级独有 UX（toast/swap、动态 mode 切换）—— 例：`/agents`
+- 页面是多视图 shell（list / creator / spine / reader 等）由内层各视图自己出 header —— 例：`/book`
+- 头部需要与 scrollable body 完全独立的 max-w / 对齐 —— 例：`/chat`（scroll 容器全宽，header / composer 各自 mx-auto）
+
+**判断规则**：如果用 PageHeader 后还要传 5+ 个 className override 或包额外的 wrapper，那不是它的场景，写 inline header。但 typography 必须遵守 canonical scale（text-2xl / xl / lg / base / sm / xs；不要再出现 `text-[19px]` / `text-[13.5px]` 这种 off-scale 数字）。
+
+**当前各路由实际选择**：
+
+| 路由 | 头部形式 | 理由 |
+|---|---|---|
+| `/space/*` (4 sub-route) | PageHeader | 简单 title + count meta + actions |
+| `/playground` | PageHeader | 单列简单页 |
+| `/co-writer` | inline toolbar | 紧凑命令栏 + border-b |
+| `/agents` | inline | toast/swap UX 独有 |
+| `/chat` | inline | scroll 容器对齐特殊 |
+| `/book` | per-view inline | 多视图 shell |
+| `/knowledge` | KnowledgeBaseDetail 内部 inline | KB 内部多 tab section |
+| `/settings` `/notebook` | inline | 历史结构，未审 |
+
+`/settings` 和 `/notebook` 的 inline header 是历史遗留；下次接近时再评估是否迁 PageHeader（应在 Phase 2 mega-page 拆分顺手做）。

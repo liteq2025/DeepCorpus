@@ -35,6 +35,13 @@ interface InspectorPanelProps {
  *   - no border on the outer aside (rule ②) — separation from main is by
  *     background step
  *   - close button in header
+ *
+ * STATUS (2026-05-02): no consumers. Designed for /chat citations panel
+ * but the chat ref UI ended up using a Sheet instead. Kept in-tree as
+ * the canonical Layer 4 primitive — if a real Layer 4 use case appears
+ * (e.g. a /book reading-companion notes pane), this is the shape to
+ * use; if none materializes by 2026-Q3, delete + collapse the 9-layer
+ * stack to 8. See docs/refactor/phase-0.5-layout.md §6 sunset note.
  */
 export function InspectorPanel({
   id,
