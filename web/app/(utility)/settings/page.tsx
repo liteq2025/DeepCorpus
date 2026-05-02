@@ -4,7 +4,9 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
   Brain,
+  CheckCircle2,
   ChevronDown,
+  CircleDashed,
   Database,
   Eye,
   EyeOff,
@@ -17,6 +19,7 @@ import {
   Terminal,
   Trash2,
   Wand2,
+  XCircle,
   type LucideIcon,
 } from "lucide-react";
 
@@ -60,6 +63,86 @@ function serviceIcon(service: ServiceName) {
   return <Search className="h-3.5 w-3.5" />;
 }
 
+function serviceHealthDot(
+  service: ServiceName,
+  status: SystemStatus | null,
+): string {
+  if (!status) return "bg-[var(--border)]";
+  if (service === "llm")
+    return statusDotClass(Boolean(status.llm.model), Boolean(status.llm.error));
+  if (service === "embedding")
+    return statusDotClass(
+      Boolean(status.embeddings.model),
+      Boolean(status.embeddings.error),
+    );
+  return statusDotClass(
+    Boolean(status.search.provider),
+    Boolean(status.search.error),
+  );
+}
+
+function buildTestSummary(
+  service: ServiceName,
+  draft: Catalog,
+  caps: { detected_dim?: number; active_dim?: number },
+): string {
+  if (service === "search") {
+    const profile = getActiveProfile(draft, "search");
+    return profile?.provider || "—";
+  }
+  const model = getActiveModel(draft, service);
+  const modelLabel = model?.model || model?.name || "—";
+  if (service === "embedding") {
+    const dim = caps.active_dim ?? caps.detected_dim;
+    return dim ? `${modelLabel} · ${dim}d` : modelLabel;
+  }
+  return modelLabel;
+}
+
+function formatTimeAgo(ts: number, locale: "en" | "zh"): string {
+  const diff = Date.now() - ts;
+  const sec = Math.max(1, Math.round(diff / 1000));
+  if (locale === "zh") {
+    if (sec < 60) return `${sec} 秒前`;
+    if (sec < 3600) return `${Math.round(sec / 60)} 分钟前`;
+    return `${Math.round(sec / 3600)} 小时前`;
+  }
+  if (sec < 60) return `${sec}s ago`;
+  if (sec < 3600) return `${Math.round(sec / 60)}m ago`;
+  return `${Math.round(sec / 3600)}h ago`;
+}
+
+function logLineClass(line: string): string {
+  const match = /^\[([a-z_]+)\]/i.exec(line);
+  const type = match?.[1]?.toLowerCase();
+  if (!type) return "text-[var(--muted-foreground)]";
+  if (type === "completed") return "text-emerald-400";
+  if (type === "failed") return "text-red-400";
+  if (type === "warning") return "text-amber-400";
+  if (type === "request" || type === "response" || type === "capabilities")
+    return "text-sky-400";
+  return "text-[var(--muted-foreground)]";
+}
+
+function serviceHealthLabel(
+  service: ServiceName,
+  status: SystemStatus | null,
+  t: (key: string) => string,
+): string {
+  if (!status) return t("Loading…");
+  if (service === "search") {
+    if (status.search.error) return status.search.error;
+    return status.search.provider
+      ? `${t("Configured")}: ${status.search.provider}`
+      : t("Not configured");
+  }
+  const slot = service === "llm" ? status.llm : status.embeddings;
+  if (slot.error) return slot.error;
+  return slot.model
+    ? `${t("Configured")}: ${slot.model}`
+    : t("Not configured");
+}
+
 type Section = "preferences" | "llm" | "embedding" | "search";
 
 interface SectionEntry {
@@ -80,15 +163,19 @@ const SERVICE_SECTIONS = new Set<Section>(["llm", "embedding", "search"]);
 function SectionsNav({
   activeSection,
   onSelect,
+  status,
 }: {
   activeSection: Section;
   onSelect: (section: Section) => void;
+  status: SystemStatus | null;
 }) {
   const { t } = useTranslation();
   return (
     <nav aria-label={t("Settings sections")} className="space-y-0.5 px-1 pt-1">
       {SECTIONS.map(({ id, label, icon: Icon }) => {
         const active = activeSection === id;
+        const isService =
+          id === "llm" || id === "embedding" || id === "search";
         return (
           <button
             key={id}
@@ -111,9 +198,16 @@ function SectionsNav({
               }`}
               aria-hidden
             />
-            <span className="truncate text-[13px] font-medium leading-tight text-[var(--foreground)]">
+            <span className="flex-1 truncate text-[13px] font-medium leading-tight text-[var(--foreground)]">
               {t(label)}
             </span>
+            {isService && (
+              <span
+                className={`ml-auto inline-block h-1.5 w-1.5 shrink-0 rounded-full ${serviceHealthDot(id as ServiceName, status)}`}
+                title={serviceHealthLabel(id as ServiceName, status, t)}
+                aria-label={serviceHealthLabel(id as ServiceName, status, t)}
+              />
+            )}
           </button>
         );
       })}
@@ -124,9 +218,11 @@ function SectionsNav({
 function SectionsNavCollapsed({
   activeSection,
   onSelect,
+  status,
 }: {
   activeSection: Section;
   onSelect: (section: Section) => void;
+  status: SystemStatus | null;
 }) {
   const { t } = useTranslation();
   return (
@@ -136,21 +232,31 @@ function SectionsNavCollapsed({
     >
       {SECTIONS.map(({ id, label, icon: Icon }) => {
         const active = activeSection === id;
+        const isService =
+          id === "llm" || id === "embedding" || id === "search";
+        const tooltip = isService
+          ? `${t(label)} · ${serviceHealthLabel(id as ServiceName, status, t)}`
+          : t(label);
         return (
           <button
             key={id}
             type="button"
             onClick={() => onSelect(id)}
-            title={t(label)}
-            aria-label={t(label)}
+            title={tooltip}
+            aria-label={tooltip}
             aria-current={active ? "page" : undefined}
-            className={`flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${
+            className={`relative flex h-8 w-8 items-center justify-center rounded-lg border transition-colors ${
               active
                 ? "border-[var(--primary)]/40 bg-[var(--primary)]/10 text-[var(--foreground)]"
                 : "border-transparent text-[var(--muted-foreground)] hover:bg-[var(--muted)]/50 hover:text-[var(--foreground)]"
             }`}
           >
             <Icon size={14} strokeWidth={active ? 2 : 1.6} aria-hidden />
+            {isService && (
+              <span
+                className={`absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full ring-1 ring-[var(--card)] ${serviceHealthDot(id as ServiceName, status)}`}
+              />
+            )}
           </button>
         );
       })}
@@ -174,6 +280,15 @@ function SettingsPageContent() {
   const [activeService, setActiveService] = useState<ServiceName>("llm");
   const [logs, setLogs] = useState<string>("Waiting for test run...");
   const [testRunning, setTestRunning] = useState<ServiceName | null>(null);
+  // The "Run test" block keeps a status banner per the active service. We
+  // reset all three when activeService changes so a stale banner from one
+  // service doesn't bleed into another.
+  const [testStatus, setTestStatus] = useState<
+    "idle" | "running" | "success" | "failed"
+  >("idle");
+  const [testSummary, setTestSummary] = useState<string>("");
+  const [testCompletedAt, setTestCompletedAt] = useState<number | null>(null);
+  const [logsOpen, setLogsOpen] = useState<boolean>(true);
   const [saving, setSaving] = useState(false);
   const [applying, setApplying] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
@@ -224,6 +339,15 @@ function SettingsPageContent() {
     draft.services.embedding.active_profile_id,
     draft.services.embedding.active_model_id,
   ]);
+
+  // Switching service tabs clears the previous run's banner + log buffer
+  // so the next view starts blank instead of showing a foreign result.
+  useEffect(() => {
+    setTestStatus("idle");
+    setTestSummary("");
+    setTestCompletedAt(null);
+    setLogs("Waiting for test run...");
+  }, [activeService]);
 
   // -- Tour guide auto-switch active service tab --------------------------
 
@@ -519,6 +643,10 @@ function SettingsPageContent() {
     }
     setLogs(`Preparing ${activeService} diagnostics...\n`);
     setTestRunning(activeService);
+    setTestStatus("running");
+    setTestSummary("");
+    setTestCompletedAt(null);
+    setLogsOpen(true);
     if (activeService === "embedding") {
       setEmbeddingCapabilities(null);
     }
@@ -577,9 +705,19 @@ function SettingsPageContent() {
           source.close();
           eventSourceRef.current = null;
           setTestRunning(null);
+          setTestCompletedAt(Date.now());
           if (entry.type === "completed") {
+            setTestStatus("success");
+            setTestSummary(
+              buildTestSummary(activeService, draft, {
+                detected_dim: entry.detected_dim,
+                active_dim: entry.active_dim,
+              }),
+            );
             toast.success(entry.message);
           } else {
+            setTestStatus("failed");
+            setTestSummary(entry.message);
             toast.error(entry.message);
           }
         }
@@ -588,6 +726,9 @@ function SettingsPageContent() {
         source.close();
         eventSourceRef.current = null;
         setTestRunning(null);
+        setTestStatus("failed");
+        setTestSummary(t("Diagnostics stream disconnected"));
+        setTestCompletedAt(Date.now());
         setLogs(
           (current) => `${current}[failed] Diagnostics stream disconnected.\n`,
         );
@@ -597,6 +738,9 @@ function SettingsPageContent() {
       const message =
         error instanceof Error ? error.message : "Could not start diagnostics.";
       setLogs((current) => `${current}[failed] ${message}\n`);
+      setTestStatus("failed");
+      setTestSummary(message);
+      setTestCompletedAt(Date.now());
       toast.error(message);
       setTestRunning(null);
     }
@@ -621,6 +765,7 @@ function SettingsPageContent() {
           <SectionsNavCollapsed
             activeSection={activeSection}
             onSelect={selectSection}
+            status={status}
           />
         }
       >
@@ -628,8 +773,28 @@ function SettingsPageContent() {
           <SectionsNav
             activeSection={activeSection}
             onSelect={selectSection}
+            status={status}
           />
-          <div className="mt-auto space-y-1 px-1 pt-4">
+          <div className="mt-auto space-y-2 px-1 pt-4">
+            <div
+              className="flex items-center gap-1.5 rounded-md bg-[var(--muted)]/30 px-2 py-1 text-[11px] text-[var(--muted-foreground)]"
+              title={
+                status?.backend.status === "online"
+                  ? t("Backend online")
+                  : t("Backend offline")
+              }
+            >
+              <span
+                className={`inline-block h-1.5 w-1.5 rounded-full ${statusDotClass(status?.backend.status === "online", false)}`}
+                aria-hidden
+              />
+              <span>{t("Backend")}</span>
+              <span className="ml-auto">
+                {status?.backend.status === "online"
+                  ? t("online")
+                  : t("offline")}
+              </span>
+            </div>
             <button
               type="button"
               data-tour="tour-actions"
@@ -666,9 +831,7 @@ function SettingsPageContent() {
       >
       <div className="mx-auto max-w-[960px] px-6 py-8">
         {activeSection === "preferences" && (
-        <>
-        {/* ── Preferences & Runtime ── */}
-        <div className="mb-8 flex flex-wrap items-center gap-x-8 gap-y-3 border-b border-[var(--border)]/50 pb-6">
+        <div className="space-y-6">
           <div className="flex items-center gap-2">
             <span className="text-[12px] text-[var(--muted-foreground)]">
               {t("Theme")}
@@ -710,40 +873,7 @@ function SettingsPageContent() {
               ))}
             </div>
           </div>
-
-          <div className="ml-auto flex items-center gap-4 text-[12px] text-[var(--muted-foreground)]">
-            <span className="flex items-center gap-1.5">
-              <span
-                className={`inline-block h-1.5 w-1.5 rounded-full ${statusDotClass(status?.backend.status === "online", false)}`}
-              />
-              {t("Backend")}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span
-                className={`inline-block h-1.5 w-1.5 rounded-full ${statusDotClass(Boolean(status?.llm.model), Boolean(status?.llm.error))}`}
-              />
-              {t("LLM")}
-              {status?.llm.model && (
-                <span className="text-[var(--muted-foreground)]/50">
-                  · {status.llm.model}
-                </span>
-              )}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span
-                className={`inline-block h-1.5 w-1.5 rounded-full ${statusDotClass(Boolean(status?.embeddings.model), Boolean(status?.embeddings.error))}`}
-              />
-              {t("Emb")}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span
-                className={`inline-block h-1.5 w-1.5 rounded-full ${statusDotClass(Boolean(status?.search.provider), false)}`}
-              />
-              {t("Search")}
-            </span>
-          </div>
         </div>
-        </>
         )}
 
         {SERVICE_SECTIONS.has(activeSection) && (
@@ -751,7 +881,7 @@ function SettingsPageContent() {
         {/* ── Service Configuration ── */}
         <div className="mb-8">
           <div className="mb-5 flex items-center justify-between">
-            <div className="flex items-baseline gap-2">
+            <div className="flex items-center gap-2">
               <h2 className="text-[16px] font-semibold text-[var(--foreground)]">
                 {t(activeService === "llm"
                   ? "LLM"
@@ -761,10 +891,10 @@ function SettingsPageContent() {
               </h2>
               <span
                 data-tour={`tour-${activeService}`}
-                className="text-[11px] text-[var(--muted-foreground)]"
-              >
-                {draft.services[activeService].profiles.length} {t("profiles")}
-              </span>
+                className={`inline-block h-2 w-2 rounded-full ${serviceHealthDot(activeService, status)}`}
+                title={serviceHealthLabel(activeService, status, t)}
+                aria-label={serviceHealthLabel(activeService, status, t)}
+              />
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -1209,37 +1339,104 @@ function SettingsPageContent() {
 
           {/* ── Run test (per-service) ── */}
           {activeProfile && (
-            <div className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--card)]/40 p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <Terminal className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-                  <span className="text-[13px] font-medium text-[var(--foreground)]">
-                    {t("Run test")}
-                  </span>
-                  {testRunning === activeService && (
-                    <Loader2 className="h-3 w-3 animate-spin text-[var(--primary)]" />
+            <div className="mt-6 overflow-hidden rounded-xl border border-[var(--border)]">
+              <div
+                className={`flex items-center justify-between gap-3 px-4 py-3 transition-colors ${
+                  testStatus === "success"
+                    ? "bg-emerald-500/10"
+                    : testStatus === "failed"
+                      ? "bg-red-500/10"
+                      : testStatus === "running"
+                        ? "bg-sky-500/10"
+                        : "bg-[var(--card)]/40"
+                }`}
+              >
+                <div className="flex min-w-0 items-center gap-2.5">
+                  {testStatus === "running" ? (
+                    <Loader2 className="h-4 w-4 shrink-0 animate-spin text-sky-500" />
+                  ) : testStatus === "success" ? (
+                    <CheckCircle2
+                      className="h-4 w-4 shrink-0 text-emerald-500"
+                      aria-hidden
+                    />
+                  ) : testStatus === "failed" ? (
+                    <XCircle
+                      className="h-4 w-4 shrink-0 text-red-500"
+                      aria-hidden
+                    />
+                  ) : (
+                    <CircleDashed
+                      className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]"
+                      aria-hidden
+                    />
                   )}
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-medium text-[var(--foreground)]">
+                      {testStatus === "running"
+                        ? t("Running test…")
+                        : testStatus === "success"
+                          ? t("Test passed")
+                          : testStatus === "failed"
+                            ? t("Test failed")
+                            : t("Run test")}
+                    </div>
+                    {(testSummary || testCompletedAt) && (
+                      <div className="mt-0.5 truncate text-[11px] text-[var(--muted-foreground)]">
+                        {testSummary && <span>{testSummary}</span>}
+                        {testSummary && testCompletedAt && (
+                          <span className="px-1 opacity-50">·</span>
+                        )}
+                        {testCompletedAt && (
+                          <span>{formatTimeAgo(testCompletedAt, language)}</span>
+                        )}
+                      </div>
+                    )}
+                    {testStatus === "idle" && !testCompletedAt && (
+                      <div className="mt-0.5 text-[11px] text-[var(--muted-foreground)]">
+                        {t(
+                          "Verifies the active {{service}} profile end-to-end.",
+                          { service: activeService },
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <button
                   type="button"
                   data-tour="tour-run-test"
                   onClick={() => runDetailedTest()}
                   disabled={testRunning !== null}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)]/50 px-2.5 py-1 text-[12px] text-[var(--muted-foreground)] transition-colors hover:border-[var(--border)] hover:text-[var(--foreground)] disabled:opacity-40"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[var(--border)] bg-[var(--card)] px-2.5 py-1 text-[12px] font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--muted)] disabled:opacity-40"
                 >
                   {serviceIcon(activeService)}
-                  {t("Run")}
+                  {testStatus === "idle" ? t("Run") : t("Run again")}
                 </button>
               </div>
-              <p className="mt-2 text-[12px] leading-relaxed text-[var(--muted-foreground)]">
-                {t(
-                  "Streams config snapshot, request target, response summary, and service-specific validation for the active {{service}} profile.",
-                  { service: activeService },
-                )}
-              </p>
-              <pre className="mt-3 max-h-[360px] overflow-y-auto rounded-lg bg-[#0f0f0f] p-4 font-mono text-[12px] leading-6 text-[#777] dark:bg-[#0a0a0a]">
-                {logs}
-              </pre>
+
+              <button
+                type="button"
+                onClick={() => setLogsOpen((v) => !v)}
+                aria-expanded={logsOpen}
+                className="flex w-full items-center justify-between gap-2 border-t border-[var(--border)] px-4 py-2 text-[12px] text-[var(--muted-foreground)] transition-colors hover:bg-[var(--muted)]/40"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Terminal className="h-3 w-3" aria-hidden />
+                  {t("Logs")}
+                </span>
+                <ChevronDown
+                  className={`h-3.5 w-3.5 transition-transform ${logsOpen ? "rotate-180" : ""}`}
+                  aria-hidden
+                />
+              </button>
+              {logsOpen && (
+                <pre className="max-h-[320px] overflow-y-auto border-t border-[var(--border)] bg-[#0f0f0f] p-4 font-mono text-[12px] leading-6 dark:bg-[#0a0a0a]">
+                  {logs.split("\n").map((line, i) => (
+                    <div key={i} className={logLineClass(line)}>
+                      {line || " "}
+                    </div>
+                  ))}
+                </pre>
+              )}
             </div>
           )}
         </div>
