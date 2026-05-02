@@ -184,6 +184,78 @@ function logLineClass(line: string): string {
   return "text-[var(--muted-foreground)]";
 }
 
+type TestStatus = "idle" | "running" | "success" | "failed";
+
+/**
+ * Health dot variant for the **main pane h2** — augments the static
+ * backend status with this session's Run-test outcome:
+ *
+ *   not-configured → gray
+ *   backend error  → red
+ *   testStatus=success → green
+ *   testStatus=failed  → red
+ *   testStatus=idle/running, but configured → amber ("not yet verified")
+ *
+ * The amber is the new state — closes the "deepseek key passed off as
+ * brave key still showed green" gap, since green now requires you to
+ * actually have run the smoke test in this session and seen it pass.
+ *
+ * The ListPane nav dots keep using the simpler `serviceHealthDot` —
+ * those represent "configuration completeness" rather than "is it
+ * actually working", since cross-service nav can't see another
+ * service's testStatus.
+ */
+function effectiveServiceHealthDot(
+  service: ServiceName,
+  status: SystemStatus | null,
+  testStatus: TestStatus,
+): string {
+  if (!status) return "bg-[var(--border)]";
+
+  const error =
+    service === "search"
+      ? status.search.error
+      : service === "llm"
+        ? status.llm.error
+        : status.embeddings.error;
+  if (error) return "bg-red-400";
+
+  const configured =
+    service === "search"
+      ? Boolean(status.search.provider)
+      : service === "llm"
+        ? Boolean(status.llm.model)
+        : Boolean(status.embeddings.model);
+  if (!configured) return "bg-[var(--border)]";
+
+  if (testStatus === "success") return "bg-emerald-500";
+  if (testStatus === "failed") return "bg-red-400";
+  // configured + idle/running this session → amber
+  return "bg-amber-500";
+}
+
+function effectiveServiceHealthLabel(
+  service: ServiceName,
+  status: SystemStatus | null,
+  testStatus: TestStatus,
+  t: (key: string) => string,
+): string {
+  if (!status) return t("Loading…");
+  const baseLabel = serviceHealthLabel(service, status, t);
+  if (baseLabel === t("Not configured")) return baseLabel;
+  // baseLabel is "Configured: {model}" or an error string
+  const error =
+    service === "search"
+      ? status.search.error
+      : service === "llm"
+        ? status.llm.error
+        : status.embeddings.error;
+  if (error) return baseLabel; // already says the error
+  if (testStatus === "success") return `${baseLabel} · ${t("Test passed")}`;
+  if (testStatus === "failed") return `${baseLabel} · ${t("Test failed")}`;
+  return `${baseLabel} · ${t("Not yet verified")}`;
+}
+
 function serviceHealthLabel(
   service: ServiceName,
   status: SystemStatus | null,
@@ -1170,9 +1242,9 @@ function SettingsPageContent() {
             </h2>
             <span
               data-tour={`tour-${activeService}`}
-              className={`inline-block h-2 w-2 rounded-full ${serviceHealthDot(activeService, status)}`}
-              title={serviceHealthLabel(activeService, status, t)}
-              aria-label={serviceHealthLabel(activeService, status, t)}
+              className={`inline-block h-2 w-2 rounded-full ${effectiveServiceHealthDot(activeService, status, testStatus)}`}
+              title={effectiveServiceHealthLabel(activeService, status, testStatus, t)}
+              aria-label={effectiveServiceHealthLabel(activeService, status, testStatus, t)}
             />
             {activeService === "search" && <SearchProviderHelp />}
           </div>
@@ -1387,6 +1459,32 @@ function SettingsPageContent() {
                           )}
                         </button>
                       </div>
+                      {(() => {
+                        if (activeService !== "search") return null;
+                        const provider = (
+                          activeProfile.provider || ""
+                        )
+                          .trim()
+                          .toLowerCase();
+                        const key = (activeProfile.api_key || "").trim();
+                        if (!key) return null;
+                        const expected: Record<string, string> = {
+                          brave: "BSA",
+                          tavily: "tvly-",
+                          jina: "jina_",
+                          perplexity: "pplx-",
+                        };
+                        const prefix = expected[provider];
+                        if (!prefix || key.startsWith(prefix)) return null;
+                        return (
+                          <p className="mt-1.5 text-[11px] text-amber-600 dark:text-amber-400">
+                            {t(
+                              "This key doesn't look like a {{provider}} key (expected to start with {{prefix}}…).",
+                              { provider, prefix },
+                            )}
+                          </p>
+                        );
+                      })()}
                     </div>
                     <div>
                       <div className="mb-1.5 text-[12px] text-[var(--muted-foreground)]">

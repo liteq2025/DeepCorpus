@@ -115,10 +115,7 @@ export function SearchProviderHelp() {
           <HelpCircle className="h-3.5 w-3.5" aria-hidden />
         </button>
       </SheetTrigger>
-      <SheetContent
-        side="right"
-        className="w-[560px] overflow-y-auto sm:max-w-[560px]"
-      >
+      <SheetContent side="right" size="third" className="overflow-y-auto">
         <SheetHeader>
           <SheetTitle>配置 Search Provider</SheetTitle>
           <SheetDescription>
