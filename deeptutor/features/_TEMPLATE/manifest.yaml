@@ -1,0 +1,21 @@
+# Feature manifest v0.2 — 复制后改下方字段
+# 详见 AGENTS.md §4
+
+name: my_feature                      # 必需，唯一（snake_case）
+version: 0.1.0                        # 必需
+type: feature                         # platform | feature | playground
+description: "One-line description shown in plugin list & UI"
+
+backend:
+  router: routers/api.py:router       # FastAPI APIRouter（可选）
+  ws_channel: my_feature              # /api/v1/ws?channel=my_feature（可选）
+  capability: capability.py:MyFeatureCapability  # 注入 orchestrator（可选）
+
+frontend:
+  route: /my-feature                  # Next.js 路由（可选）
+  source: web/features/my_feature     # 前端代码所在
+  nav_label: "My Feature"             # 侧边栏显示
+
+depends_on:
+  platform: []                        # 列出依赖的 L2 模块，如 [llm, editor, storage]
+  domain: []                          # 列出依赖的 L3 模块，如 [agent, knowledge]

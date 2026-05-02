@@ -110,6 +110,7 @@ dev = [
     "pre-commit>=3.0.0",
     "safety<3.0.0",
     "bandit>=1.8.0",
+    "import-linter>=2.0",
 ]
 
 # Everything: server + tutorbot + matrix + math-animator + dev tools.
@@ -318,6 +319,60 @@ ignore_errors = true
 [[tool.mypy.overrides]]
 module = "deeptutor.tools.*"
 ignore_errors = true  # Some tools may have dynamic imports
+
+# ============================================
+# import-linter — 守住 v3 五层架构（详见 AGENTS.md §1）
+# ============================================
+# v0.2: warn-only（CI 步骤设 continue-on-error: true）
+# 过渡期内 deeptutor.{agents,capabilities,tools,runtime,knowledge,co_writer,
+# tutorbot,book} 仍存在于顶级，待 P2/P3/P4 完成迁移后从 ignore_imports 移除。
+[tool.importlinter]
+root_packages = ["deeptutor"]
+
+[[tool.importlinter.contracts]]
+name = "L1 core 零依赖"
+type = "forbidden"
+source_modules = ["deeptutor.core"]
+forbidden_modules = [
+    "deeptutor.services",
+    "deeptutor.features",
+    "deeptutor.api",
+    "deeptutor.app",
+    "deeptutor.agents",
+    "deeptutor.capabilities",
+    "deeptutor.tools",
+    "deeptutor.runtime",
+    "deeptutor.knowledge",
+]
+
+[[tool.importlinter.contracts]]
+name = "L2 platform 不依赖 L3/L4"
+type = "forbidden"
+source_modules = ["deeptutor.services.platform"]
+forbidden_modules = [
+    "deeptutor.services.domain",
+    "deeptutor.features",
+    "deeptutor.api",
+    "deeptutor.app",
+]
+
+[[tool.importlinter.contracts]]
+name = "L3 domain 不依赖 L4"
+type = "forbidden"
+source_modules = ["deeptutor.services.domain"]
+forbidden_modules = [
+    "deeptutor.features",
+    "deeptutor.api",
+    "deeptutor.app",
+]
+
+[[tool.importlinter.contracts]]
+name = "L4 features 同层不交叉"
+type = "independence"
+modules = ["deeptutor.features.*"]
+ignore_imports = [
+    "deeptutor.features._TEMPLATE -> *",
+]
 
 # ============================================
 # Bandit security linting configuration

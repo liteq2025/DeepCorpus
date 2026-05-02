@@ -72,6 +72,29 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
 
+  import-linter:
+    name: Architecture Layering (warn-only)
+    runs-on: ubuntu-latest
+    # v0.2 阶段：违规不 fail CI，只在日志里展示，等 P2/P3/P4 迁完再卡死
+    continue-on-error: true
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install import-linter
+        run: pip install "import-linter>=2.0"
+
+      - name: Run lint-imports
+        run: |
+          echo "🏛️ 五层架构合规检查 (v3) — 违规当前不阻塞 CI"
+          lint-imports --no-cache || true
+
   smoke-tests:
     name: Smoke Tests (Python 3.11)
     runs-on: ubuntu-latest
@@ -113,10 +136,11 @@ jobs:
 
       - name: Run smoke tests
         run: |
-          echo "🧪 Running smoke test subset"
+          echo "🧪 Running smoke test subset (incl. v3 P0.6 + P0.13 baselines)"
           pytest -q --import-mode=importlib \
             tests/api \
             tests/cli \
+            tests/features_smoke \
             tests/services/test_model_catalog.py \
             tests/services/test_path_service.py \
             tests/services/memory \

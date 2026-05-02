@@ -20,10 +20,12 @@ import {
   EyeOff,
   Info,
   Loader2,
+  Moon,
   Plus,
   Rocket,
   Search,
   SlidersHorizontal,
+  Sun,
   Terminal,
   Trash2,
   Wand2,
@@ -68,6 +70,13 @@ import {
   type UiSettings,
 } from "@/lib/settings-helpers";
 import { DimensionField } from "@/components/settings/DimensionField";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 function serviceIcon(service: ServiceName) {
   if (service === "llm") return <Brain className="h-3.5 w-3.5" />;
@@ -219,6 +228,19 @@ const SECTION_GROUPS: SectionGroup[] = [
 const ALL_SECTIONS: SectionEntry[] = SECTION_GROUPS.flatMap((g) => g.items);
 
 const SERVICE_SECTIONS = new Set<Section>(["llm", "embedding", "search"]);
+
+type LanguageCode = "en" | "zh";
+
+interface LanguageOption {
+  value: LanguageCode;
+  /** Endonym — show each language's name in its own script. */
+  label: string;
+}
+
+const LANGUAGES: LanguageOption[] = [
+  { value: "en", label: "English" },
+  { value: "zh", label: "中文" },
+];
 
 function SectionsNav({
   activeSection,
@@ -960,17 +982,26 @@ function SettingsPageContent() {
                 </p>
               </div>
               <div className="flex shrink-0 gap-0.5 rounded-lg bg-[var(--muted)] p-0.5">
-                {(["light", "dark"] as const).map((v) => (
+                {(
+                  [
+                    { value: "light", icon: Sun, label: t("Light") },
+                    { value: "dark", icon: Moon, label: t("Dark") },
+                  ] as const
+                ).map(({ value, icon: Icon, label }) => (
                   <button
-                    key={v}
-                    onClick={() => updateTheme(v)}
-                    className={`rounded-md px-2.5 py-1 text-[12px] transition-all ${
-                      theme === v
-                        ? "bg-[var(--card)] font-medium text-[var(--foreground)] shadow-sm"
+                    key={value}
+                    type="button"
+                    onClick={() => updateTheme(value)}
+                    title={label}
+                    aria-label={label}
+                    aria-pressed={theme === value}
+                    className={`flex h-7 w-7 items-center justify-center rounded-md transition-all ${
+                      theme === value
+                        ? "bg-[var(--card)] text-[var(--foreground)] shadow-sm"
                         : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
                     }`}
                   >
-                    {v === "light" ? t("Light") : t("Dark")}
+                    <Icon className="h-3.5 w-3.5" aria-hidden />
                   </button>
                 ))}
               </div>
@@ -984,21 +1015,21 @@ function SettingsPageContent() {
                   {t("Display language for the interface.")}
                 </p>
               </div>
-              <div className="flex shrink-0 gap-0.5 rounded-lg bg-[var(--muted)] p-0.5">
-                {(["en", "zh"] as const).map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => updateLanguage(v)}
-                    className={`rounded-md px-2.5 py-1 text-[12px] transition-all ${
-                      language === v
-                        ? "bg-[var(--card)] font-medium text-[var(--foreground)] shadow-sm"
-                        : "text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
-                    }`}
-                  >
-                    {v === "en" ? t("language.english") : t("language.chinese")}
-                  </button>
-                ))}
-              </div>
+              <Select
+                value={language}
+                onValueChange={(v) => updateLanguage(v as LanguageCode)}
+              >
+                <SelectTrigger className="w-[160px]" size="sm">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGES.map(({ value, label }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
