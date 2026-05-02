@@ -110,14 +110,20 @@ def test_bot_not_found_in_ws_handler(monkeypatch):
     app.include_router(tutorbot_router_mod.router, prefix="/api/v1/tutorbot")
     client = TestClient(app)
 
-    with pytest.raises(Exception) as excinfo:
+    from starlette.websockets import WebSocketDisconnect
+
+    with pytest.raises(WebSocketDisconnect) as excinfo:
         with client.websocket_connect("/api/v1/tutorbot/nonexistent-bot/ws") as ws:
-            # Should receive error then close
-            ws.receive_json(timeout=2)
-            ws.receive_json(timeout=2)  # close should propagate
-    err_msg = str(excinfo.value).lower()
-    assert "4004" in err_msg or "close" in err_msg or "not found" in err_msg, (
-        f"expected 4004/close error, got: {excinfo.value}"
+            # Receive the explicit error frame first, then the close handshake
+            err_frame = ws.receive_json()
+            assert err_frame.get("type") == "error", (
+                f"expected error frame first, got: {err_frame}"
+            )
+            assert "not found" in str(err_frame.get("content", "")).lower()
+            ws.receive_text()  # raises WebSocketDisconnect with code 4004
+
+    assert excinfo.value.code == 4004, (
+        f"expected close code 4004 (Bot not found), got: {excinfo.value.code}"
     )
 
 

@@ -131,6 +131,16 @@ async def _stream_add_record_with_summary(
         yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 
+@router.get("/health")
+async def health_check():
+    """Health check.
+
+    Must be defined before any path-parameter route (e.g. ``/{notebook_id}``)
+    or FastAPI will route ``GET /health`` into the catch-all and return 404.
+    """
+    return {"status": "healthy", "service": "notebook"}
+
+
 @router.get("/list")
 async def list_notebooks():
     """
@@ -346,7 +356,3 @@ async def update_record(notebook_id: str, record_id: str, request: UpdateRecordR
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/health")
-async def health_check():
-    """Health check"""
-    return {"status": "healthy", "service": "notebook"}

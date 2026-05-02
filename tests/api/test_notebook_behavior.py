@@ -26,7 +26,7 @@ def test_record_create_summary_persisted(tmp_path):
 
     result = mgr.add_record(
         notebook_ids=[notebook["id"]],
-        record_type=RecordType.NOTE if hasattr(RecordType, "NOTE") else "note",
+        record_type=RecordType.CHAT,
         title="My Record",
         user_query="What is X?",
         output="X is foo.",
@@ -72,7 +72,7 @@ def test_notebooks_ordered_by_updated_at_desc(tmp_path):
     time.sleep(0.01)
     mgr.add_record(
         notebook_ids=[nb1["id"]],
-        record_type="note",
+        record_type="chat",
         title="x",
         user_query="x",
         output="x",
@@ -97,7 +97,7 @@ def test_notebook_delete_cascades_records(tmp_path):
     for i in range(3):
         mgr.add_record(
             notebook_ids=[nb["id"]],
-            record_type="note",
+            record_type="chat",
             title=f"r{i}",
             user_query=f"q{i}",
             output=f"o{i}",
