@@ -78,6 +78,7 @@ import {
   type UiSettings,
 } from "@/lib/settings-helpers";
 import { DimensionField } from "@/components/settings/DimensionField";
+import { SearchProviderHelp } from "@/components/settings/SearchProviderHelp";
 import {
   Select,
   SelectContent,
@@ -1173,6 +1174,7 @@ function SettingsPageContent() {
               title={serviceHealthLabel(activeService, status, t)}
               aria-label={serviceHealthLabel(activeService, status, t)}
             />
+            {activeService === "search" && <SearchProviderHelp />}
           </div>
 
           {activeProfile ? (
