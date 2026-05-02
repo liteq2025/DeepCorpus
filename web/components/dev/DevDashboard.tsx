@@ -291,8 +291,8 @@ const COMPONENT_TREE = `web/                                              整个
 │   │   ├── KbUpdateHistory.tsx                   更新历史
 │   │   ├── KnowledgeBaseDetail.tsx               右侧详情面板
 │   │   ├── KnowledgeBaseList.tsx                 左侧 KB 列表
-│   │   ├── KnowledgeBaseListItem.tsx             单个 KB 卡片
-│   │   └── KnowledgePage.tsx                     ⭐ /knowledge 路由编排
+│   │   └── KnowledgeBaseListItem.tsx             单个 KB 卡片
+│   │   (Phase 3: KnowledgePage.tsx 已内联到 app/(utility)/knowledge/page.tsx)
 │   │
 │   ├── math-animator/                            2 files
 │   │   ├── MathAnimatorConfigPanel.tsx           Manim 输出/质量/风格
