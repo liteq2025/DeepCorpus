@@ -5,7 +5,6 @@ import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
   Brain,
   ChevronDown,
-  ChevronRight,
   Database,
   Eye,
   EyeOff,
@@ -13,7 +12,6 @@ import {
   Loader2,
   Plus,
   Rocket,
-  Save,
   Search,
   SlidersHorizontal,
   Terminal,
@@ -23,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 import { ListPane, RouteFrame } from "@/components/layout";
 import { writeStoredLanguage } from "@/context/app-shell-storage";
@@ -61,46 +60,19 @@ function serviceIcon(service: ServiceName) {
   return <Search className="h-3.5 w-3.5" />;
 }
 
-type Section = "preferences" | "llm" | "embedding" | "search" | "diagnostics";
+type Section = "preferences" | "llm" | "embedding" | "search";
 
 interface SectionEntry {
   id: Section;
   label: string;
-  description: string;
   icon: LucideIcon;
 }
 
 const SECTIONS: SectionEntry[] = [
-  {
-    id: "preferences",
-    label: "Preferences",
-    description: "Theme, language, and runtime status.",
-    icon: SlidersHorizontal,
-  },
-  {
-    id: "llm",
-    label: "LLM",
-    description: "Chat model profiles and credentials.",
-    icon: Brain,
-  },
-  {
-    id: "embedding",
-    label: "Embedding",
-    description: "Vector encoder profiles and dimensions.",
-    icon: Database,
-  },
-  {
-    id: "search",
-    label: "Search",
-    description: "Web search providers and proxies.",
-    icon: Search,
-  },
-  {
-    id: "diagnostics",
-    label: "Diagnostics",
-    description: "Stream config + run a connection test.",
-    icon: Terminal,
-  },
+  { id: "preferences", label: "Preferences", icon: SlidersHorizontal },
+  { id: "llm", label: "LLM", icon: Brain },
+  { id: "embedding", label: "Embedding", icon: Database },
+  { id: "search", label: "Search", icon: Search },
 ];
 
 const SERVICE_SECTIONS = new Set<Section>(["llm", "embedding", "search"]);
@@ -115,7 +87,7 @@ function SectionsNav({
   const { t } = useTranslation();
   return (
     <nav aria-label={t("Settings sections")} className="space-y-0.5 px-1 pt-1">
-      {SECTIONS.map(({ id, label, description, icon: Icon }) => {
+      {SECTIONS.map(({ id, label, icon: Icon }) => {
         const active = activeSection === id;
         return (
           <button
@@ -123,32 +95,25 @@ function SectionsNav({
             type="button"
             onClick={() => onSelect(id)}
             aria-current={active ? "page" : undefined}
-            className={`group block w-full rounded-lg border px-2.5 py-2 text-left transition-colors ${
+            className={`group flex w-full items-center gap-2 rounded-lg border px-2.5 py-2 text-left transition-colors ${
               active
                 ? "border-[var(--primary)]/40 bg-[var(--primary)]/8"
                 : "border-transparent hover:border-[var(--border)] hover:bg-[var(--muted)]/40"
             }`}
           >
-            <div className="flex items-start gap-2">
-              <Icon
-                size={14}
-                strokeWidth={active ? 2 : 1.6}
-                className={`mt-0.5 shrink-0 ${
-                  active
-                    ? "text-[var(--foreground)]"
-                    : "text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]"
-                }`}
-                aria-hidden
-              />
-              <div className="min-w-0 flex-1">
-                <div className="text-[13px] font-medium leading-tight text-[var(--foreground)]">
-                  {t(label)}
-                </div>
-                <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-[var(--muted-foreground)]">
-                  {t(description)}
-                </p>
-              </div>
-            </div>
+            <Icon
+              size={14}
+              strokeWidth={active ? 2 : 1.6}
+              className={`shrink-0 ${
+                active
+                  ? "text-[var(--foreground)]"
+                  : "text-[var(--muted-foreground)] group-hover:text-[var(--foreground)]"
+              }`}
+              aria-hidden
+            />
+            <span className="truncate text-[13px] font-medium leading-tight text-[var(--foreground)]">
+              {t(label)}
+            </span>
           </button>
         );
       })}
@@ -212,8 +177,6 @@ function SettingsPageContent() {
   const [saving, setSaving] = useState(false);
   const [applying, setApplying] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
-  const [toast, setToast] = useState<string>("");
-  const [diagnosticsOpen, setDiagnosticsOpen] = useState(true);
   const [providers, setProviders] = useState<
     Record<ServiceName, ProviderOption[]>
   >({ llm: [], embedding: [], search: [] });
@@ -251,11 +214,6 @@ function SettingsPageContent() {
     };
   }, []);
 
-  useEffect(() => {
-    if (!toast) return;
-    const timer = setTimeout(() => setToast(""), 3500);
-    return () => clearTimeout(timer);
-  }, [toast]);
 
   // Reset stale ``embeddingCapabilities`` whenever the active embedding
   // profile or model changes. Without this, a 4096d detection on profile A
@@ -288,7 +246,6 @@ function SettingsPageContent() {
 
   const activeProfile = getActiveProfile(draft, activeService);
   const activeModel = getActiveModel(draft, activeService);
-  const hasUnsavedChanges = JSON.stringify(catalog) !== JSON.stringify(draft);
   const searchProviderRaw =
     activeService === "search"
       ? (activeProfile?.provider || "").trim().toLowerCase()
@@ -487,7 +444,10 @@ function SettingsPageContent() {
 
   // -- Save / Apply -------------------------------------------------------
 
-  const saveCatalog = async () => {
+  // Auto-save: writes the catalog draft to model_catalog.json when the user
+  // pauses editing for 600 ms. The button to save manually is gone (D plan)
+  // — the only persistence step the user has to think about is Apply.
+  const saveCatalog = useCallback(async () => {
     setSaving(true);
     try {
       const response = await fetch(apiUrl("/api/v1/settings/catalog"), {
@@ -495,14 +455,35 @@ function SettingsPageContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ catalog: draft }),
       });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
       const payload = await response.json();
       setCatalog(payload.catalog);
-      setDraft(cloneCatalog(payload.catalog));
-      setToast(t("Draft saved"));
+      // Don't overwrite `draft` — the user may still be typing. The next
+      // `hasUnsavedChanges` recompute will collapse to false because the
+      // baseline now matches the just-sent body.
+    } catch (err) {
+      toast.error(
+        t("Auto-save failed: {{reason}}", {
+          reason: err instanceof Error ? err.message : String(err),
+        }),
+      );
     } finally {
       setSaving(false);
     }
-  };
+  }, [draft, t]);
+
+  // Auto-save: debounce by 600ms so we don't PUT on every keystroke.
+  // First mount: initial load sets catalog == draft so the effect
+  // short-circuits — no spurious save on bootstrap.
+  useEffect(() => {
+    if (JSON.stringify(catalog) === JSON.stringify(draft)) return;
+    const timer = setTimeout(() => {
+      void saveCatalog();
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [draft, catalog, saveCatalog]);
 
   const applyCatalog = async () => {
     setApplying(true);
@@ -515,9 +496,15 @@ function SettingsPageContent() {
       const payload = await response.json();
       setCatalog(payload.catalog);
       setDraft(cloneCatalog(payload.catalog));
-      setToast(t("Applied to .env"));
+      toast.success(t("Applied to .env"));
       const statusResponse = await fetch(apiUrl("/api/v1/system/status"));
       setStatus((await statusResponse.json()) as SystemStatus);
+    } catch (err) {
+      toast.error(
+        t("Apply failed: {{reason}}", {
+          reason: err instanceof Error ? err.message : String(err),
+        }),
+      );
     } finally {
       setApplying(false);
     }
@@ -590,7 +577,11 @@ function SettingsPageContent() {
           source.close();
           eventSourceRef.current = null;
           setTestRunning(null);
-          setToast(entry.message);
+          if (entry.type === "completed") {
+            toast.success(entry.message);
+          } else {
+            toast.error(entry.message);
+          }
         }
       };
       source.onerror = () => {
@@ -600,13 +591,13 @@ function SettingsPageContent() {
         setLogs(
           (current) => `${current}[failed] Diagnostics stream disconnected.\n`,
         );
-        setToast(t("Diagnostics stream disconnected"));
+        toast.error(t("Diagnostics stream disconnected"));
       };
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Could not start diagnostics.";
       setLogs((current) => `${current}[failed] ${message}\n`);
-      setToast(message);
+      toast.error(message);
       setTestRunning(null);
     }
   };
@@ -633,60 +624,18 @@ function SettingsPageContent() {
           />
         }
       >
-        <SectionsNav
-          activeSection={activeSection}
-          onSelect={selectSection}
-        />
-      </ListPane>
-      <section
-        aria-label="Settings content"
-        className="flex-1 overflow-y-auto [scrollbar-gutter:stable]"
-      >
-      <div className="mx-auto max-w-[960px] px-6 py-8">
-        {/* ── Header ── */}
-        <div className="mb-6 flex items-start justify-between">
-          <div>
-            <h1 className="text-[24px] font-semibold tracking-tight text-[var(--foreground)]">
-              {t("Settings")}
-            </h1>
-            {toast ? (
-              <p className="mt-1 text-[13px] text-[var(--primary)] animate-fade-in">
-                {toast}
-              </p>
-            ) : (
-              <p className="mt-1 text-[13px] text-[var(--muted-foreground)]">
-                {hasUnsavedChanges
-                  ? t("Draft has unsaved changes")
-                  : t("All changes saved")}
-              </p>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
+        <div className="flex min-h-full flex-col">
+          <SectionsNav
+            activeSection={activeSection}
+            onSelect={selectSection}
+          />
+          <div className="mt-auto space-y-1 px-1 pt-4">
             <button
-              onClick={runTour}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)]/50 px-3 py-1.5 text-[12px] font-medium text-[var(--muted-foreground)] transition-colors hover:border-[var(--border)] hover:text-[var(--foreground)]"
-            >
-              <Rocket className="h-3 w-3" />
-              {t("Tour")}
-            </button>
-            <button
-              data-tour="tour-save-test"
-              onClick={saveCatalog}
-              disabled={saving}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)]/50 px-3 py-1.5 text-[12px] font-medium text-[var(--muted-foreground)] transition-colors hover:border-[var(--border)] hover:text-[var(--foreground)] disabled:opacity-40"
-            >
-              {saving ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <Save className="h-3 w-3" />
-              )}
-              {t("Save Draft")}
-            </button>
-            <button
+              type="button"
               data-tour="tour-actions"
               onClick={applyCatalog}
-              disabled={applying}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[var(--foreground)] px-3 py-1.5 text-[12px] font-medium text-[var(--background)] transition-opacity hover:opacity-80 disabled:opacity-40"
+              disabled={applying || saving}
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-[var(--foreground)] px-3 py-1.5 text-[12px] font-medium text-[var(--background)] transition-opacity hover:opacity-80 disabled:opacity-40"
             >
               {applying ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -695,9 +644,27 @@ function SettingsPageContent() {
               )}
               {t("Apply")}
             </button>
+            <button
+              type="button"
+              onClick={runTour}
+              className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-[var(--border)]/50 px-3 py-1.5 text-[12px] text-[var(--muted-foreground)] transition-colors hover:border-[var(--border)] hover:text-[var(--foreground)]"
+            >
+              <Rocket className="h-3 w-3" />
+              {t("Tour")}
+            </button>
+            {saving && (
+              <p className="pt-1 text-center text-[10.5px] text-[var(--muted-foreground)]">
+                {t("Saving…")}
+              </p>
+            )}
           </div>
         </div>
-
+      </ListPane>
+      <section
+        aria-label="Settings content"
+        className="flex-1 overflow-y-auto [scrollbar-gutter:stable]"
+      >
+      <div className="mx-auto max-w-[960px] px-6 py-8">
         {activeSection === "preferences" && (
         <>
         {/* ── Preferences & Runtime ── */}
@@ -1163,7 +1130,7 @@ function SettingsPageContent() {
                                     : activeModel.context_window_source ===
                                         "manual"
                                       ? t(
-                                          "Manual override from Settings. Save Draft to persist your edit.",
+                                          "Manual override from Settings. Auto-saves once you stop typing.",
                                         )
                                       : t(
                                           "Run the LLM test to auto-fill this field, or enter a value manually.",
@@ -1239,68 +1206,38 @@ function SettingsPageContent() {
               {t("No profiles configured. Add a profile to start.")}
             </div>
           )}
-        </div>
-        </>
-        )}
 
-        {activeSection === "diagnostics" && (
-        <>
-        {/* ── Diagnostics ── */}
-        <div className="mb-6 rounded-xl border border-[var(--border)]">
-          <div className="flex items-center justify-between px-5 py-3.5">
-            <button
-              type="button"
-              onClick={() => setDiagnosticsOpen((v) => !v)}
-              className="flex min-w-0 flex-1 items-center gap-2 text-left"
-              aria-expanded={diagnosticsOpen}
-            >
-              <Terminal className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
-              <span className="text-[13px] font-medium text-[var(--foreground)]">
-                {t("Diagnostics")}
-              </span>
-              {testRunning && (
-                <Loader2 className="h-3 w-3 animate-spin text-[var(--primary)]" />
-              )}
-            </button>
-            <div className="ml-3 flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  if (!diagnosticsOpen) setDiagnosticsOpen(true);
-                  runDetailedTest();
-                }}
-                disabled={testRunning !== null}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)]/50 px-2.5 py-1 text-[12px] text-[var(--muted-foreground)] transition-colors hover:border-[var(--border)] hover:text-[var(--foreground)] disabled:opacity-40"
-              >
-                {serviceIcon(activeService)}
-                {t("Run test")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setDiagnosticsOpen((v) => !v)}
-                className="text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
-                aria-label={
-                  diagnosticsOpen
-                    ? t("Collapse diagnostics")
-                    : t("Expand diagnostics")
-                }
-                aria-expanded={diagnosticsOpen}
-              >
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform ${diagnosticsOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-            </div>
-          </div>
-          {diagnosticsOpen && (
-            <div className="border-t border-[var(--border)] px-5 py-4">
-              <p className="mb-3 text-[12px] leading-relaxed text-[var(--muted-foreground)]">
+          {/* ── Run test (per-service) ── */}
+          {activeProfile && (
+            <div className="mt-6 rounded-xl border border-[var(--border)] bg-[var(--card)]/40 p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Terminal className="h-3.5 w-3.5 text-[var(--muted-foreground)]" />
+                  <span className="text-[13px] font-medium text-[var(--foreground)]">
+                    {t("Run test")}
+                  </span>
+                  {testRunning === activeService && (
+                    <Loader2 className="h-3 w-3 animate-spin text-[var(--primary)]" />
+                  )}
+                </div>
+                <button
+                  type="button"
+                  data-tour="tour-run-test"
+                  onClick={() => runDetailedTest()}
+                  disabled={testRunning !== null}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--border)]/50 px-2.5 py-1 text-[12px] text-[var(--muted-foreground)] transition-colors hover:border-[var(--border)] hover:text-[var(--foreground)] disabled:opacity-40"
+                >
+                  {serviceIcon(activeService)}
+                  {t("Run")}
+                </button>
+              </div>
+              <p className="mt-2 text-[12px] leading-relaxed text-[var(--muted-foreground)]">
                 {t(
                   "Streams config snapshot, request target, response summary, and service-specific validation for the active {{service}} profile.",
                   { service: activeService },
                 )}
               </p>
-              <pre className="max-h-[360px] overflow-y-auto rounded-lg bg-[#0f0f0f] p-4 font-mono text-[12px] leading-6 text-[#777] dark:bg-[#0a0a0a]">
+              <pre className="mt-3 max-h-[360px] overflow-y-auto rounded-lg bg-[#0f0f0f] p-4 font-mono text-[12px] leading-6 text-[#777] dark:bg-[#0a0a0a]">
                 {logs}
               </pre>
             </div>

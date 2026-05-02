@@ -237,7 +237,7 @@ export const TOUR_GUIDE_STEPS = [
     descKey: "settingsTour.search.desc",
   },
   {
-    target: "tour-save-test",
+    target: "tour-run-test",
     titleKey: "settingsTour.saveTest.title",
     descKey: "settingsTour.saveTest.desc",
   },
