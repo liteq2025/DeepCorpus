@@ -10,6 +10,19 @@ from typing import Any, Iterable
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 ENV_PATH = PROJECT_ROOT / ".env"
 
+
+def _resolve_env_path() -> Path:
+    """Allow the env-file location to be overridden via DEEPTUTOR_ENV_FILE.
+
+    Used by e2e launchers (scripts/start_e2e_env.py) to point the backend
+    at a sandboxed config without touching the developer's real .env.
+    Falls back to the canonical project-root .env in normal use.
+    """
+    override = os.environ.get("DEEPTUTOR_ENV_FILE")
+    if override:
+        return Path(override).expanduser().resolve()
+    return ENV_PATH
+
 ENV_KEY_ORDER = (
     "BACKEND_PORT",
     "FRONTEND_PORT",
@@ -76,8 +89,11 @@ class ConfigSummary:
 class EnvStore:
     """Canonical `.env` reader/writer for local DeepTutor configuration."""
 
-    def __init__(self, path: Path = ENV_PATH):
-        self.path = path
+    def __init__(self, path: Path | None = None):
+        # path=None → resolve at construction time so DEEPTUTOR_ENV_FILE set
+        # before the first import of env_store wins, but later mutations of
+        # the env var don't surprise an already-built store.
+        self.path = path if path is not None else _resolve_env_path()
 
     def load(self) -> OrderedDict[str, str]:
         if self.path.exists():
