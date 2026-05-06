@@ -12,7 +12,12 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import AtMentionPopup from "@/components/chat/AtMentionPopup";
+import { shouldOpenAtPopup, stripTrailingAtMention } from "@/lib/at-mention";
 import { shouldSubmitOnEnter } from "@/lib/composer-keyboard";
+
+// Re-exports preserve the previous public surface — anything that imported
+// these from "@/components/chat/home/ComposerInput" continues to work.
+export { shouldOpenAtPopup, stripTrailingAtMention };
 
 interface ComposerInputProps {
   textareaRef: RefObject<HTMLTextAreaElement | null>;
@@ -34,15 +39,6 @@ interface ComposerInputProps {
 export interface ComposerInputHandle {
   clear: () => void;
   getValue: () => string;
-}
-
-export function shouldOpenAtPopup(value: string, cursorPos: number): boolean {
-  const prefix = value.slice(0, cursorPos);
-  return /(^|\s)@[^\s]*$/.test(prefix);
-}
-
-export function stripTrailingAtMention(value: string): string {
-  return value.replace(/(^|\s)@[^\s]*$/, "$1").replace(/\s+$/, "");
 }
 
 export const ComposerInput = memo(
