@@ -34,10 +34,13 @@ test.describe("smoke :: golden paths", () => {
   test("/settings switching to Dark applies the dark class", async ({
     page,
   }) => {
-    await page.goto(`${BASE_URL}/settings`);
-    await expect(
-      page.getByRole("heading", { name: /^settings$/i }),
-    ).toBeVisible();
+    const response = await page.goto(`${BASE_URL}/settings`);
+    expect(response?.ok(), "/settings did not return a 2xx response").toBe(true);
+    // After bb32431 the page-level <h1>Settings</h1> was intentionally removed
+    // (Diagnostics folded into services, auto-save replaced the manual Apply
+    // bar). Anchor on `main` instead so the smoke stays meaningful without
+    // depending on chrome the team chose to drop.
+    await expect(page.locator("main")).toBeVisible();
 
     // Click the Dark theme chip and verify <html> picks up the class.
     await page.getByRole("button", { name: /^dark$/i }).first().click();
