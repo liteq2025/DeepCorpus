@@ -1,4 +1,4 @@
-import type { StreamEvent } from "@/lib/unified-ws";
+import type { StreamEvent } from "./unified-ws";
 
 export function shouldAppendEventContent(event: StreamEvent): boolean {
   if (event.type !== "content") return false;
