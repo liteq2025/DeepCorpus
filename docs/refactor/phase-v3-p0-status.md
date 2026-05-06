@@ -51,6 +51,20 @@
 - P0.15 `tests/features_smoke/` 接入 `.github/workflows/tests.yml`
 - P0.19 phase 3 状态跟踪 doc
 
+### 🔶 e2e 基础设施部分到位（2026-05-06 增量）
+
+可用：
+- `scripts/mock_llm_server.py` — OpenAI 兼容 stub，4/4 roundtrip 通过
+- `scripts/start_e2e_env.py` — 一键起 mock + backend + frontend 在 sandbox 端口（8099/8012/3783）
+- `deeptutor/services/config/env_store.py` 加 `DEEPTUTOR_ENV_FILE` 覆盖
+- `tests/integration/` runner pattern（skip-when-down + httpx）
+
+**剩余阻塞 backend↔mock 端到端**：LLM 配置实际读取 `data/user/settings/model_catalog.json`（你 settings 工作产出的 catalog）；catalog 非空时 .env 是 fallback。要完整隔离需要：
+- `PathService.user_data_dir` 支持 `DEEPTUTOR_USER_DATA_DIR` 环境覆盖（仿 env_store 的 `DEEPTUTOR_ENV_FILE`）
+- launcher 在 sandbox dir 下放一份 mock `model_catalog.json` 指向 mock LLM
+
+这步动 PathService（prod code），归 P1.b/P1.c 期间一并做。当下 #28-#31 的 e2e 写不了**真打**测试，但可以写**WS 协议形状**测试（mock backend 响应即可）—— 仍能验证 BookChatPanel 切换的 frame 结构。
+
 ### ⏸ 阻塞中（6 项）—— 等 phase 3 ✅
 
 | ID | 任务 | 阻塞原因 |
